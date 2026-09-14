@@ -1204,6 +1204,438 @@ h1 > span {
     bottom: 105px;
   }
 }
+
+/* v0.1.0-10 — the arcade is a game screen; secondary collection detail lives in dialogs. */
+.arcade-view {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: 64px 34px minmax(0, 1fr);
+}
+.arcade-view .site-header {
+  height: 64px;
+  width: 100%;
+  max-width: 1440px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.arcade-view .demo-banner {
+  min-height: 34px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.arcade-view .main-content {
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0;
+  padding-bottom: 12px;
+}
+.arcade-view .page-heading {
+  flex: 0 0 auto;
+  padding: 10px 0 9px;
+}
+.arcade-view .page-heading h1 {
+  margin: 4px 0 1px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.arcade-view .page-heading p {
+  display: none;
+}
+.arcade-view .page-heading .eyebrow {
+  font-size: 13px;
+}
+.arcade-view .arcade-layout {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 318px;
+  gap: 16px;
+}
+.arcade-view .arcade-panel,
+.arcade-view .machine-details {
+  min-height: 0;
+  overflow: hidden;
+}
+.arcade-view .panel-toolbar {
+  height: 38px;
+}
+.arcade-view .machine-tabs {
+  min-height: 62px;
+}
+.arcade-view .machine-tab {
+  min-height: 62px;
+  padding: 7px 9px;
+}
+.arcade-view .machine-tab small {
+  display: none;
+}
+.arcade-view .machine-tab strong {
+  font-size: 8px;
+}
+.arcade-view .tab-price {
+  font-size: 22px;
+}
+.arcade-view .tab-price small {
+  display: block;
+  font-size: 9px;
+}
+.arcade-view .machine-details {
+  padding: 17px;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+.arcade-view .details-top {
+  margin-bottom: 10px;
+}
+.arcade-view .machine-details h2 {
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 0;
+}
+.arcade-view .machine-details h2 > span {
+  font-size: 18px;
+}
+.arcade-view .details-description {
+  font-size: 18px;
+  margin: 9px 0 11px;
+}
+.arcade-view .machine-specs {
+  padding-bottom: 10px;
+  gap: 9px;
+}
+.arcade-view .machine-specs span {
+  font-size: 14px;
+}
+.arcade-view .machine-specs strong {
+  font-size: 16px;
+}
+.arcade-view .price-block {
+  margin: 12px 0 10px;
+}
+.arcade-view .price {
+  font-size: 42px;
+}
+.arcade-view .price > span {
+  font-size: 17px;
+}
+.arcade-view .play-credit-icon {
+  width: 38px;
+  height: 38px;
+}
+.arcade-view .play-credit-icon svg {
+  width: 21px;
+}
+.arcade-view .pull-button {
+  min-height: 43px;
+  font-size: 18px;
+  padding: 7px 9px;
+}
+.arcade-view .pull-note {
+  font-size: 13px;
+  margin: 9px 0;
+}
+.arcade-view .outcome-options {
+  font-size: 15px;
+  padding-top: 9px;
+}
+.pool-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 9px 4px 0;
+  margin-top: auto;
+  color: #c1d4eb;
+  font-size: 16px;
+}
+.pool-button:hover {
+  color: var(--lime);
+}
+.arcade-view .site-footer {
+  display: none;
+}
+.pool-dialog-list {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+}
+.pool-dialog-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 13px;
+  padding: 12px;
+  background: #1a2944;
+  border: 3px solid #587397;
+}
+.pool-dialog-item .prize-symbol {
+  width: 64px;
+  height: 78px;
+  min-width: 0;
+}
+.pool-dialog-item .prize-symbol svg {
+  width: 24px;
+  height: 24px;
+}
+.pool-dialog-item .prize-symbol > span {
+  font-size: 10px;
+}
+.pool-dialog-item .prize-number {
+  position: absolute;
+  right: 9px;
+  top: 6px;
+}
+.pool-dialog-item h3 {
+  font-size: 21px;
+  margin: 2px 26px 2px 0;
+  line-height: 1.05;
+}
+.pool-dialog-item p {
+  margin: 0;
+  color: #aec0db;
+  font-size: 16px;
+  line-height: 1.1;
+}
+.pool-dialog-item strong {
+  display: block;
+  color: var(--tier-color);
+  font-size: 18px;
+  margin-top: 5px;
+}
+.pool-dialog-item strong span {
+  color: #9ab0cf;
+  font-size: 14px;
+}
+.inventory-view {
+  min-height: 100dvh;
+}
+.inventory-view .inventory-section {
+  max-height: calc(100dvh - 220px);
+  overflow: auto;
+}
+
+@media (max-width: 760px) {
+  .arcade-view {
+    grid-template-rows: 88px 32px minmax(0, 1fr);
+  }
+  .arcade-view .site-header {
+    height: 88px;
+    padding: 0 16px;
+    margin: 0;
+  }
+  .arcade-view .site-header nav {
+    top: 55px;
+    height: 33px;
+    padding: 0 16px;
+    gap: 20px;
+  }
+  .arcade-view .help-nav {
+    display: none;
+  }
+  .arcade-view .nav-link {
+    font-size: 12px;
+  }
+  .arcade-view .demo-banner {
+    min-height: 32px;
+    font-size: 9px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  .arcade-view .demo-banner > span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .arcade-view .page-heading {
+    padding: 6px 0;
+  }
+  .arcade-view .page-heading .eyebrow {
+    font-size: 10px;
+  }
+  .arcade-view .page-heading h1 {
+    font-size: 12px;
+    margin: 1px 0 0;
+  }
+  .arcade-view .edition {
+    display: none;
+  }
+  .arcade-view .arcade-layout {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .arcade-view .arcade-panel {
+    min-height: 0;
+  }
+  .arcade-view .panel-toolbar {
+    height: 31px;
+    padding: 0 10px;
+  }
+  .arcade-view .panel-toolbar > span {
+    font-size: 12px;
+  }
+  .arcade-view .machine-tabs {
+    min-height: 50px;
+  }
+  .arcade-view .machine-tab {
+    min-height: 50px;
+    padding: 4px 7px;
+    gap: 4px;
+  }
+  .arcade-view .tab-index {
+    display: none;
+  }
+  .arcade-view .machine-tab strong {
+    font-size: 7px;
+  }
+  .arcade-view .tab-price {
+    margin-left: auto;
+    font-size: 18px;
+  }
+  .arcade-view .tab-price small {
+    font-size: 7px;
+  }
+  .arcade-view .arcade-scene {
+    min-height: 0;
+    height: auto;
+  }
+  .arcade-view .scene-sign {
+    top: 14px;
+    font-size: 8px;
+  }
+  .arcade-view .scene-machines {
+    bottom: 35px;
+  }
+  .arcade-view .scene-machine {
+    flex-basis: 106px;
+  }
+  .arcade-view .scene-machine-label {
+    margin-top: 5px;
+    font-size: 6px;
+  }
+  .arcade-view .gray-machine {
+    bottom: 56px;
+  }
+  .arcade-view .pixel-character {
+    bottom: 25px;
+  }
+  .arcade-view .scene-caption {
+    bottom: 5px;
+    font-size: 7px;
+  }
+  .arcade-view .machine-details {
+    min-height: 126px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 12px;
+  }
+  .arcade-view .details-top {
+    grid-column: 1 / -1;
+    margin-bottom: 2px;
+  }
+  .arcade-view .machine-details h2 {
+    font-size: 10px;
+    align-self: center;
+  }
+  .arcade-view .machine-details h2 > span {
+    display: none;
+  }
+  .arcade-view .details-description,
+  .arcade-view .machine-specs,
+  .arcade-view .outcome-options,
+  .arcade-view .pull-note,
+  .arcade-view .skip-reveal {
+    display: none;
+  }
+  .arcade-view .price-block {
+    grid-column: 1;
+    margin: 1px 0 0;
+    align-self: end;
+  }
+  .arcade-view .price-block .eyebrow,
+  .arcade-view .play-credit-icon {
+    display: none;
+  }
+  .arcade-view .price {
+    font-size: 28px;
+    margin: 0;
+  }
+  .arcade-view .price > span {
+    font-size: 13px;
+  }
+  .arcade-view .pull-button {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+    min-height: 48px;
+    font-size: 15px;
+    padding: 6px 11px;
+  }
+  .arcade-view .pull-button svg {
+    width: 15px;
+  }
+  .arcade-view .pool-button {
+    grid-column: 1;
+    padding: 0;
+    margin: 0;
+    justify-content: flex-start;
+    font-size: 13px;
+  }
+  .inventory-view .inventory-section {
+    max-height: none;
+  }
+}
+
+@media (max-width: 760px) and (max-height: 700px) and (orientation: landscape) {
+  .arcade-view {
+    min-height: auto;
+    display: block;
+  }
+  .arcade-view .site-header {
+    height: 88px;
+  }
+  .arcade-view .main-content {
+    display: block;
+    padding-bottom: 18px;
+  }
+  .arcade-view .arcade-layout {
+    display: grid;
+  }
+  .arcade-view .arcade-panel {
+    min-height: 286px;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .arcade-view {
+    min-height: auto;
+    display: block;
+  }
+  .arcade-view .site-header {
+    height: 56px;
+  }
+  .arcade-view .demo-banner {
+    min-height: 28px;
+  }
+  .arcade-view .main-content {
+    display: block;
+  }
+  .arcade-view .page-heading {
+    padding: 5px 0;
+  }
+  .arcade-view .arcade-layout {
+    display: grid;
+    grid-template-columns: minmax(420px, 1fr) 275px;
+  }
+  .arcade-view .arcade-panel {
+    min-height: 300px;
+  }
+  .arcade-view .machine-details {
+    min-height: 300px;
+  }
+}
 @media (max-width: 480px) {
   .site-header nav {
     gap: 19px;
@@ -1319,5 +1751,154 @@ h1 > span {
   }
   .mobile-playbar strong > small {
     font-size: 15px;
+  }
+}
+
+/* Keep the portrait arcade's grid track definite so its flexible scene receives height. */
+.demo-copy-compact {
+  display: none;
+}
+.arcade-view {
+  height: 100dvh;
+  min-height: 100dvh;
+  grid-template-columns: minmax(0, 1fr);
+}
+.arcade-view .main-content {
+  margin-block: 0;
+  align-self: stretch;
+  min-width: 0;
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .arcade-view .help-nav {
+    display: flex;
+  }
+  .arcade-view .wallet-button > span:not(.wallet-amount) {
+    display: none;
+  }
+  .arcade-view .site-header {
+    gap: 16px;
+  }
+  .arcade-view .site-header nav {
+    gap: 16px;
+    margin-left: 0;
+  }
+  .arcade-view .nav-link {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  .arcade-view .site-header {
+    align-items: flex-start;
+    padding-top: 8px;
+  }
+  .arcade-view .brand {
+    gap: 8px;
+  }
+  .arcade-view .brand-icon {
+    width: 38px;
+    height: 38px;
+  }
+  .arcade-view .brand-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  .arcade-view .wallet-button {
+    padding: 6px 8px;
+    min-height: 38px;
+  }
+  .arcade-view .help-nav {
+    display: flex;
+    font-size: 15px;
+  }
+  .arcade-view .site-header nav {
+    gap: 14px;
+  }
+  .arcade-view .nav-link {
+    font-size: 18px;
+  }
+  .arcade-view .nav-link svg {
+    width: 15px;
+    height: 15px;
+  }
+  .arcade-view .demo-banner {
+    font-size: 16px;
+  }
+  .arcade-view .demo-banner > span {
+    min-width: 0;
+  }
+  .arcade-view .demo-copy {
+    display: none;
+  }
+  .arcade-view .demo-copy-compact {
+    display: inline;
+  }
+  .arcade-view .demo-banner > button {
+    font-size: 15px;
+  }
+  .arcade-view .main-content {
+    min-height: 0;
+  }
+  .arcade-view .arcade-layout {
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .arcade-view .arcade-panel {
+    min-height: 0;
+  }
+  .arcade-view .arcade-scene {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .arcade-view .machine-details {
+    grid-template-rows: 24px 22px 30px 34px;
+  }
+  .arcade-view .details-top {
+    padding-bottom: 0;
+    border: 0;
+  }
+  .arcade-view .machine-details h2 {
+    grid-row: 2;
+    font-size: 9px;
+  }
+  .arcade-view .price-block {
+    grid-row: 3;
+    padding: 0;
+    border: 0;
+  }
+  .arcade-view .pool-button {
+    grid-row: 4;
+    grid-column: 1 / -1;
+    min-height: 34px;
+    font-size: 16px;
+  }
+  .arcade-view .scene-caption {
+    font-size: 12px;
+  }
+  .arcade-view .panel-toolbar > span {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 760px) and (max-height: 740px) and (orientation: portrait) {
+  .arcade-view .scene-machine {
+    flex-basis: 82px;
+  }
+  .arcade-view .scene-sign {
+    font-size: 7px;
+  }
+}
+
+@media (max-width: 760px) and (max-height: 700px) and (orientation: landscape) {
+  .arcade-view {
+    height: auto;
+    min-height: auto;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .arcade-view .arcade-layout {
+    grid-template-columns: 1fr;
   }
 }

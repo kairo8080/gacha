@@ -11,7 +11,9 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. No environment variables or service credentials are required for this iteration.
 
-## Current iteration: v0.1.0-09
+## Current iteration: v0.1.0-10
+
+The arcade is a single-screen hero: the machine scene and pull controls share the available viewport height, with sample prize details opened from the machine panel. Portrait phones use a compact control bar. Inventory and dialogs retain scrolling when their contents need more room; short landscape screens allow page scrolling to keep controls accessible.
 
 The complete interface now uses VT323 for readable pixel text, Press Start 2P for game headings, original crisp 16×16 SVG icons, hard-edged frames and buttons, and a slate-blue/cyan/purple/gold/mint palette matched to the supplied artwork. Visual tokens and the shared skin live in `app/pixel-theme.css`; structural layouts live in `app/globals.css`.
 
@@ -33,7 +35,7 @@ npm test
 npm run build
 ```
 
-The production homepage is prerendered. Browser smoke path: select each machine → pull → keep or resell → inventory → preview shipping → history → reload. Check mobile sizing, keyboard access, and the insufficient-credit/reset state.
+The production homepage is prerendered. Browser smoke path: select each machine → preview prizes → pull → keep or resell → inventory → preview shipping → history → reload. Check viewport fit on desktop and portrait phones, keyboard access, and the insufficient-credit/reset state.
 
 ## Next iteration
 

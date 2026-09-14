@@ -44,7 +44,7 @@ const accents: Record<MachineId, string> = {
   rare: "#c073f5",
   epic: "#ffd34d",
 };
-type Modal = "how" | "wallet" | "result" | "reset" | "shipping" | null;
+type Modal = "how" | "wallet" | "result" | "reset" | "shipping" | "pool" | null;
 
 function MachineSprite({
   id,
@@ -270,7 +270,9 @@ export default function Arcade() {
     .reverse();
 
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell ${view === "arcade" ? "arcade-view" : "inventory-view"}`}
+    >
       <a className="skip-link" href="#main">
         Skip to arcade
       </a>
@@ -324,8 +326,13 @@ export default function Arcade() {
 
       <div className="demo-banner">
         <span>
-          <span className="demo-label">FREE PLAY</span>This is a demo. Sample
-          prizes, play credits, zero real transactions.
+          <span className="demo-label">FREE PLAY</span>
+          <span className="demo-copy">
+            This is a demo. Sample prizes, play credits, zero real transactions.
+          </span>
+          <span className="demo-copy-compact">
+            DEMO · Play credits. Sample prizes.
+          </span>
         </span>
         <button
           onClick={() => setModal("reset")}
@@ -550,18 +557,23 @@ export default function Arcade() {
                 </div>
                 <button
                   className="pull-button"
-                  onClick={pull}
-                  disabled={
-                    !ready || running || activeState.balance < machine.price
+                  onClick={
+                    running
+                      ? finishPull
+                      : activeState.balance < machine.price
+                        ? () => setModal("reset")
+                        : pull
                   }
+                  disabled={!ready}
                 >
                   {running ? (
                     <>
-                      <span className="loading-pixels">•••</span>Finding your
-                      prize
+                      Reveal prize <ArrowRight size={19} />
                     </>
                   ) : activeState.balance < machine.price ? (
-                    <>Not enough demo credits</>
+                    <>
+                      Reset demo <RotateCcw size={18} />
+                    </>
                   ) : (
                     <>
                       <Gamepad2 size={20} />
@@ -604,48 +616,15 @@ export default function Arcade() {
                     Ship
                   </span>
                 </div>
+                <button
+                  className="pool-button"
+                  onClick={() => setModal("pool")}
+                >
+                  <Package size={15} /> View the 3 sample prizes
+                  <ChevronRight size={15} />
+                </button>
               </aside>
             </div>
-
-            <section className="prize-section" aria-labelledby="prizes-heading">
-              <div className="section-title">
-                <div>
-                  <span className="eyebrow">A PEEK INSIDE</span>
-                  <h2 id="prizes-heading">What could you pull?</h2>
-                </div>
-                <span className="sample-badge">SAMPLE PRIZE POOL</span>
-              </div>
-              <div className="prize-grid">
-                {machine.prizes.map((prize, index) => (
-                  <article
-                    className="prize-card"
-                    key={prize.id}
-                    style={
-                      { "--tier-color": accents[selected] } as CSSProperties
-                    }
-                  >
-                    <PrizeSymbol prize={prize} />
-                    <div className="prize-card-copy">
-                      <span className="prize-type">
-                        {prize.kind === "graded"
-                          ? "GRADED COLLECTIBLE"
-                          : "SEALED COLLECTIBLE"}
-                      </span>
-                      <h3>{prize.name}</h3>
-                      <p>{prize.detail}</p>
-                      <span className="prize-value">
-                        {credits(prize.value)} CR <span>demo value</span>
-                      </span>
-                    </div>
-                    <span className="prize-number">0{index + 1}</span>
-                  </article>
-                ))}
-              </div>
-              <p className="pool-note">
-                Preview items and values are illustrative. Your real machine
-                inventory and odds will replace this sample pool.
-              </p>
-            </section>
           </>
         ) : (
           <section className="inventory-section">
@@ -778,35 +757,6 @@ export default function Arcade() {
         </footer>
       </main>
 
-      {view === "arcade" && (
-        <div className="mobile-playbar">
-          <div>
-            <span>{machine.name} machine</span>
-            <strong>
-              {machine.price} <small>demo credits</small>
-            </strong>
-          </div>
-          <button
-            className="primary-button"
-            onClick={
-              running
-                ? finishPull
-                : activeState.balance < machine.price
-                  ? () => setModal("reset")
-                  : pull
-            }
-            disabled={!ready}
-          >
-            {running
-              ? "Reveal prize"
-              : activeState.balance < machine.price
-                ? "Reset demo"
-                : "Demo pull"}
-            <ArrowRight size={17} />
-          </button>
-        </div>
-      )}
-
       {storageWarning && (
         <div className="storage-warning" role="status">
           Browser storage is unavailable. This demo session may not survive a
@@ -838,9 +788,49 @@ export default function Arcade() {
                 ? "Reset demo"
                 : modal === "wallet"
                   ? "Demo wallet"
-                  : "How to play"
+                  : modal === "pool"
+                    ? `${machine.name} sample prize pool`
+                    : "How to play"
         }
       >
+        {modal === "pool" && (
+          <>
+            <span className="eyebrow">SAMPLE PRIZE POOL · EQUAL ODDS</span>
+            <h2>What could you pull?</h2>
+            <div className="pool-dialog-list">
+              {machine.prizes.map((prize, index) => (
+                <article
+                  className="pool-dialog-item"
+                  key={prize.id}
+                  style={{ "--tier-color": accents[selected] } as CSSProperties}
+                >
+                  <span className="prize-number">0{index + 1}</span>
+                  <PrizeSymbol prize={prize} />
+                  <div>
+                    <span className="prize-type">
+                      {prize.kind === "graded" ? "GRADED" : "SEALED"}
+                    </span>
+                    <h3>{prize.name}</h3>
+                    <p>{prize.detail}</p>
+                    <strong>
+                      {credits(prize.value)} CR <span>demo value</span>
+                    </strong>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <p className="dialog-note">
+              Preview prizes and values are illustrative. Live inventory and
+              odds will replace this sample pool.
+            </p>
+            <button
+              className="primary-button full-width"
+              onClick={() => setModal(null)}
+            >
+              Back to {machine.name} <ArrowRight size={17} />
+            </button>
+          </>
+        )}
         {modal === "how" && (
           <>
             <span className="eyebrow">WELCOME TO GACHA ARCADE</span>

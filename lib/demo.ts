@@ -1,3 +1,5 @@
+import { machines, stockCatalog } from "./catalog.ts";
+
 /**
  * Local-only state for the arcade demo. Credits, prizes, resale, and shipping
  * are illustrative UI mechanics; this module never performs commerce.
@@ -11,6 +13,8 @@ export type Prize = {
   kind: "pack" | "graded";
   value: number;
   grade?: string;
+  startingQuantity?: number;
+  machineId?: MachineId;
 };
 
 export type Machine = {
@@ -23,101 +27,7 @@ export type Machine = {
   prizes: Prize[];
 };
 
-export const machines: Machine[] = [
-  {
-    id: "common",
-    name: "Common",
-    level: "Common",
-    price: 10,
-    tagline: "Easy pulls for a quick collection boost.",
-    description: "A friendly demo machine with sample collectible prizes.",
-    prizes: [
-      {
-        id: "common-lorcana-booster-pack",
-        name: "Lorcana booster pack",
-        detail: "Sample single booster prize",
-        kind: "pack",
-        value: 8,
-      },
-      {
-        id: "common-two-pack-bundle",
-        name: "Two-pack bundle",
-        detail: "Sample pair of booster packs",
-        kind: "pack",
-        value: 10,
-      },
-      {
-        id: "common-collector-pack",
-        name: "Collector pack",
-        detail: "Sample collector-focused pack",
-        kind: "pack",
-        value: 12,
-      },
-    ],
-  },
-  {
-    id: "rare",
-    name: "Rare",
-    level: "Rare",
-    price: 25,
-    tagline: "Higher stakes, brighter showcase cards.",
-    description: "A demo machine featuring sample collectible prizes.",
-    prizes: [
-      {
-        id: "rare-premium-booster-bundle",
-        name: "Premium booster bundle",
-        detail: "Sample bundle of collectible boosters",
-        kind: "pack",
-        value: 28,
-      },
-      {
-        id: "rare-graded-lorcana-card",
-        name: "Graded Lorcana card",
-        detail: "Sample graded-card prize",
-        kind: "graded",
-        value: 32,
-      },
-      {
-        id: "rare-collector-bundle",
-        name: "Collector bundle",
-        detail: "Sample collector bundle",
-        kind: "pack",
-        value: 35,
-      },
-    ],
-  },
-  {
-    id: "epic",
-    name: "Epic",
-    level: "Epic",
-    price: 60,
-    tagline: "A premium demo pull with collector-grade prizes.",
-    description: "The top-tier demo machine for sample collectible prizes.",
-    prizes: [
-      {
-        id: "epic-premium-graded-card",
-        name: "Premium graded card",
-        detail: "Sample premium graded-card prize",
-        kind: "graded",
-        value: 78,
-      },
-      {
-        id: "epic-graded-collector-pair",
-        name: "Graded collector pair",
-        detail: "Sample pair of graded collectibles",
-        kind: "graded",
-        value: 82,
-      },
-      {
-        id: "epic-showcase-collectible",
-        name: "Showcase collectible",
-        detail: "Sample showcase collectible",
-        kind: "graded",
-        value: 90,
-      },
-    ],
-  },
-];
+export { machines, stockCatalog, totalStartingStock } from "./catalog.ts";
 
 export type InventoryItem = {
   id: string;
@@ -137,7 +47,43 @@ export const initialState: DemoState = { balance: 250, items: [], pulls: 0 };
 
 /** Illustrative in-app credit rate only; it is not a resale offer. */
 export const resaleRate = 0.8;
-export const STORAGE_KEY = "gacha-demo-v1";
+// Keep the old sample-prize session intact; stock simulation starts separately.
+export const LEGACY_STORAGE_KEY = "gacha-demo-v1";
+export const STORAGE_KEY = "gacha-demo-sample-v3";
+
+/** Kept and shipping-preview packs are reserved; demo resales return to this pool. */
+export function remainingStock(state: DemoState, prizeId: string): number {
+  const prize = stockCatalog.find((entry) => entry.id === prizeId);
+  if (!prize) return 0;
+  const reserved = state.items.filter(
+    (item) => item.prize.id === prizeId && item.status !== "sold",
+  ).length;
+  return Math.max(0, prize.startingQuantity - reserved);
+}
+
+export function machineStock(state: DemoState, machineId: MachineId): number {
+  return (machineById(machineId)?.prizes ?? []).reduce(
+    (total, prize) => total + remainingStock(state, prize.id),
+    0,
+  );
+}
+
+/** Map an integer ticket to a remaining pack, weighting each set by available stock. */
+export function drawPrizeIndex(
+  state: DemoState,
+  machineId: MachineId,
+  ticket: number,
+): number {
+  const machine = machineById(machineId);
+  if (!machine || !Number.isInteger(ticket) || ticket < 0) return -1;
+  let cursor = ticket;
+  for (const [index, prize] of machine.prizes.entries()) {
+    const available = remainingStock(state, prize.id);
+    if (cursor < available) return index;
+    cursor -= available;
+  }
+  return -1;
+}
 
 export function resaleValue(prize: Prize): number {
   return Math.round(prize.value * resaleRate * 100) / 100;
@@ -173,6 +119,9 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       state.balance < machine.price ||
       !isValidDate(action.createdAt)
     ) {
+      return state;
+    }
+    if (remainingStock(state, machine.prizes[action.prizeIndex].id) === 0) {
       return state;
     }
     const item: InventoryItem = {
@@ -281,6 +230,13 @@ export function parseSavedState(raw: string | null): DemoState {
         prize,
       });
     }
+    if (candidate.pulls !== items.length) return initialState;
+    for (const prize of stockCatalog) {
+      const reserved = items.filter(
+        (item) => item.prize.id === prize.id && item.status !== "sold",
+      ).length;
+      if (reserved > prize.startingQuantity) return initialState;
+    }
     return { balance: candidate.balance, pulls: candidate.pulls, items };
   } catch {
     return initialState;
@@ -302,6 +258,8 @@ function samePrize(saved: Record<string, unknown>, prize: Prize): boolean {
     saved.detail === prize.detail &&
     saved.kind === prize.kind &&
     saved.value === prize.value &&
-    saved.grade === prize.grade
+    saved.grade === prize.grade &&
+    saved.startingQuantity === prize.startingQuantity &&
+    saved.machineId === prize.machineId
   );
 }

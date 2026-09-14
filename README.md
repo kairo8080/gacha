@@ -11,7 +11,9 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. No environment variables or service credentials are required for this iteration.
 
-## Current iteration: v0.1.0-10
+## Current iteration: v0.1.0-11
+
+The simulation uses a public fixture of 14 Lorcana sets, with 100 fictional packs in every set (1,400 fictional packs total). View a machine’s remaining sample stock and per-set odds in the pool popup, or inspect all sample stock there. Pulls reserve one pack; demo resale returns it, while keeping and shipping previews leave it reserved. Stock and credits are local to each browser. See `docs/inventory-seed.md` for the public fixture and simulation rules.
 
 The arcade is a single-screen hero: the machine scene and pull controls share the available viewport height, with sample prize details opened from the machine panel. Portrait phones use a compact control bar. Inventory and dialogs retain scrolling when their contents need more room; short landscape screens allow page scrolling to keep controls accessible.
 
@@ -20,10 +22,10 @@ The complete interface now uses VT323 for readable pixel text, Press Start 2P fo
 - Common / Rare / Epic machines with the supplied sprite artwork.
 - Animated claw sequence, skip reveal, optional synthesized sound, reduced-motion support.
 - 250 starting demo credits; sample pulls cost 10 / 25 / 60 credits.
-- Keep prizes, resell for 80% of sample value in play credits, or preview shipping.
+- Keep packs, resell for 80% of demo value in play credits, or preview shipping.
 - Browser-local inventory/history, reset control, and mobile layout.
 
-All values, odds, and transactions are simulations. No wallet connection, real payments, payout, address collection, physical stock reservation, or shipment occurs. Browser state is not a trustworthy record for live commerce and is not synchronized between tabs or devices.
+All values, odds, and transactions are simulations. The public fixture contains fictional sample stock only: demo quantities do not reflect warehouse stock. No wallet connection, real payments, payout, address collection, physical stock reservation, or shipment occurs. Browser state is not a trustworthy record for live commerce and is not synchronized between tabs or devices. This iteration starts a fresh sample-stock simulation and leaves the earlier demo session intact.
 
 `pixelart/` contains untouched original artwork. `public/pixelart/` contains copies used by the app. Machines use 62×92 cells from 4×6 sheets; claw sequences use 114×110 cells from 5×18 sheets. The supplied Rare machine artwork itself reads LEVEL 3 and Epic reads LEVEL 2; the UI follows the source filenames until the owner confirms the intended mapping.
 

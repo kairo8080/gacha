@@ -27,10 +27,15 @@ import {
 } from "@/components/pixel-icons";
 import {
   demoReducer,
+  drawPrizeIndex,
   initialState,
+  LEGACY_STORAGE_KEY,
+  machineStock,
   machines,
   parseSavedState,
+  remainingStock,
   resaleValue,
+  stockCatalog,
   STORAGE_KEY,
   type InventoryItem,
   type MachineId,
@@ -71,6 +76,7 @@ function PrizeSymbol({ prize }: { prize: Prize }) {
     <div className={`prize-symbol ${prize.kind}`} aria-hidden="true">
       {prize.kind === "graded" ? <ShieldCheck /> : <Package />}
       <span>{prize.kind === "graded" ? "GRADED" : "SEALED"}</span>
+      <small className="prize-set-badge">{prize.name}</small>
     </div>
   );
 }
@@ -150,6 +156,8 @@ export default function Arcade() {
   const [shippingId, setShippingId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const [storageWarning, setStorageWarning] = useState(false);
+  const [legacySessionNotice, setLegacySessionNotice] = useState(false);
+  const [showAllStock, setShowAllStock] = useState(false);
   const pullLock = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,7 +169,11 @@ export default function Arcade() {
   );
   useEffect(() => {
     try {
-      setSavedState(parseSavedState(localStorage.getItem(STORAGE_KEY)));
+      const saved = localStorage.getItem(STORAGE_KEY);
+      setSavedState(parseSavedState(saved));
+      setLegacySessionNotice(
+        saved === null && localStorage.getItem(LEGACY_STORAGE_KEY) !== null,
+      );
     } catch {
       setStorageWarning(true);
       setSavedState(initialState);
@@ -179,6 +191,11 @@ export default function Arcade() {
   const activeResult = activeState.items.find((item) => item.id === resultId);
   const activeShipping = activeState.items.find(
     (item) => item.id === shippingId,
+  );
+  const selectedMachineStock = machineStock(activeState, selected);
+  const totalRemainingStock = stockCatalog.reduce(
+    (total, prize) => total + remainingStock(activeState, prize.id),
+    0,
   );
   function act(action: Parameters<typeof demoReducer>[1]) {
     setSavedState((current) => demoReducer(current ?? initialState, action));
@@ -228,19 +245,50 @@ export default function Arcade() {
     setModal("result");
   }
   function pull() {
-    if (!ready || pullLock.current || activeState.balance < machine.price)
+    if (
+      !ready ||
+      pullLock.current ||
+      activeState.balance < machine.price ||
+      selectedMachineStock < 1
+    )
       return;
     pullLock.current = true;
-    beep();
     const itemId = crypto.randomUUID();
-    const random = crypto.getRandomValues(new Uint32Array(1))[0];
-    act({
+    const limit =
+      Math.floor(2 ** 32 / selectedMachineStock) * selectedMachineStock;
+    let random = crypto.getRandomValues(new Uint32Array(1))[0];
+    while (random >= limit)
+      random = crypto.getRandomValues(new Uint32Array(1))[0];
+    const prizeIndex = drawPrizeIndex(
+      activeState,
+      selected,
+      random % selectedMachineStock,
+    );
+    if (prizeIndex < 0) {
+      pullLock.current = false;
+      notify(
+        "That machine is sold out in this local demo. Reset demo to play again.",
+      );
+      return;
+    }
+    const action = {
       type: "pull",
       machineId: selected,
       itemId,
-      prizeIndex: random % machine.prizes.length,
+      prizeIndex,
       createdAt: new Date().toISOString(),
-    });
+    } as const;
+    const nextState = demoReducer(activeState, action);
+    if (
+      nextState === activeState ||
+      !nextState.items.some((item) => item.id === itemId)
+    ) {
+      pullLock.current = false;
+      notify("This pull could not be completed. Please try again.");
+      return;
+    }
+    setSavedState(nextState);
+    beep();
     setResultId(itemId);
     setRunning(true);
     timer.current = setTimeout(
@@ -528,17 +576,13 @@ export default function Arcade() {
                   <div>
                     <span>Inside this machine</span>
                     <strong>
-                      {selected === "common"
-                        ? "Packs & small surprises"
-                        : selected === "rare"
-                          ? "Premium packs & graded cards"
-                          : "Graded cards & bigger finds"}
+                      {machine.prizes.length} Lorcana sets · Sample stock
                     </strong>
                   </div>
                   <div>
                     <span>Prize selection</span>
                     <strong>
-                      3 sample prizes · equal odds
+                      {machine.prizes.length} sets · current demo odds
                       <HelpCircle size={13} />
                     </strong>
                   </div>
@@ -560,7 +604,8 @@ export default function Arcade() {
                   onClick={
                     running
                       ? finishPull
-                      : activeState.balance < machine.price
+                      : activeState.balance < machine.price ||
+                          selectedMachineStock < 1
                         ? () => setModal("reset")
                         : pull
                   }
@@ -570,9 +615,13 @@ export default function Arcade() {
                     <>
                       Reveal prize <ArrowRight size={19} />
                     </>
-                  ) : activeState.balance < machine.price ? (
+                  ) : activeState.balance < machine.price ||
+                    selectedMachineStock < 1 ? (
                     <>
-                      Reset demo <RotateCcw size={18} />
+                      {selectedMachineStock < 1
+                        ? "Reset demo stock"
+                        : "Reset demo"}{" "}
+                      <RotateCcw size={18} />
                     </>
                   ) : (
                     <>
@@ -589,17 +638,21 @@ export default function Arcade() {
                   >
                     Skip animation <ChevronRight size={14} />
                   </button>
-                ) : activeState.balance < machine.price ? (
+                ) : activeState.balance < machine.price ||
+                  selectedMachineStock < 1 ? (
                   <button
                     className="text-button skip-reveal"
                     onClick={() => setModal("reset")}
                   >
-                    Reset your demo balance <RotateCcw size={14} />
+                    {selectedMachineStock < 1
+                      ? "Reset demo stock"
+                      : "Reset your demo balance"}{" "}
+                    <RotateCcw size={14} />
                   </button>
                 ) : (
                   <p className="pull-note">
                     <ShieldCheck size={13} />
-                    Every demo pull gives you one sample prize.
+                    One pull awards one sealed Lorcana booster pack.
                   </p>
                 )}
                 <div className="outcome-options">
@@ -618,9 +671,13 @@ export default function Arcade() {
                 </div>
                 <button
                   className="pool-button"
-                  onClick={() => setModal("pool")}
+                  onClick={() => {
+                    setShowAllStock(false);
+                    setModal("pool");
+                  }}
                 >
-                  <Package size={15} /> View the 3 sample prizes
+                  <Package size={15} /> View sample stock ·{" "}
+                  {machine.prizes.length} sets
                   <ChevronRight size={15} />
                 </button>
               </aside>
@@ -763,6 +820,21 @@ export default function Arcade() {
           refresh.
         </div>
       )}
+      {legacySessionNotice && (
+        <div className="storage-warning legacy-session-notice" role="status">
+          <span>
+            Your previous demo is saved separately. This is a fresh sample-stock
+            simulation.
+          </span>
+          <button
+            className="icon-button"
+            aria-label="Dismiss session notice"
+            onClick={() => setLegacySessionNotice(false)}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       <div
         className={`toast ${notice ? "visible" : ""}`}
         role="status"
@@ -789,40 +861,95 @@ export default function Arcade() {
                 : modal === "wallet"
                   ? "Demo wallet"
                   : modal === "pool"
-                    ? `${machine.name} sample prize pool`
+                    ? `${machine.name} sample stock`
                     : "How to play"
         }
       >
         {modal === "pool" && (
           <>
-            <span className="eyebrow">SAMPLE PRIZE POOL · EQUAL ODDS</span>
-            <h2>What could you pull?</h2>
+            <span className="eyebrow">
+              SAMPLE STOCK · ILLUSTRATIVE GAME CONFIG
+            </span>
+            <h2>
+              {showAllStock
+                ? "All sample stock"
+                : `${machine.name} machine pool`}
+            </h2>
+            <p className="dialog-note pool-stock-intro">
+              100 fictional packs per set. Demo quantities do not reflect
+              warehouse stock.
+            </p>
+            <div className="pool-summary">
+              <span>
+                {showAllStock ? totalRemainingStock : selectedMachineStock} sample
+                {" "}packs remaining
+              </span>
+              <span>
+                fictional game config
+              </span>
+            </div>
+            <button
+              className="text-button full-width pool-toggle"
+              onClick={() => setShowAllStock((current) => !current)}
+            >
+              {showAllStock
+                ? `View ${machine.name} pool`
+                : `View all sample stock · ${stockCatalog.length} sets`}
+              <ChevronRight size={15} />
+            </button>
             <div className="pool-dialog-list">
-              {machine.prizes.map((prize, index) => (
-                <article
-                  className="pool-dialog-item"
-                  key={prize.id}
-                  style={{ "--tier-color": accents[selected] } as CSSProperties}
-                >
-                  <span className="prize-number">0{index + 1}</span>
-                  <PrizeSymbol prize={prize} />
-                  <div>
-                    <span className="prize-type">
-                      {prize.kind === "graded" ? "GRADED" : "SEALED"}
-                    </span>
-                    <h3>{prize.name}</h3>
-                    <p>{prize.detail}</p>
-                    <strong>
-                      {credits(prize.value)} CR <span>demo value</span>
-                    </strong>
-                  </div>
-                </article>
-              ))}
+              {(showAllStock ? stockCatalog : machine.prizes).map(
+                (prize, index) => {
+                  const prizeMachine = prize.machineId ?? selected;
+                  const remaining = remainingStock(activeState, prize.id);
+                  const machineTotal = machineStock(activeState, prizeMachine);
+                  return (
+                    <article
+                      className="pool-dialog-item"
+                      key={prize.id}
+                      style={
+                        {
+                          "--tier-color": accents[prizeMachine],
+                        } as CSSProperties
+                      }
+                    >
+                      {!showAllStock && (
+                        <span className="prize-number">0{index + 1}</span>
+                      )}
+                      <PrizeSymbol prize={prize} />
+                      <div>
+                        <span className="prize-type">
+                          <span
+                            className={`machine-mini-badge ${prizeMachine}`}
+                          >
+                            {prizeMachine}
+                          </span>{" "}
+                          SEALED PACK
+                        </span>
+                        <h3>{prize.name}</h3>
+                        <p>{prize.detail}</p>
+                        <strong>
+                          {credits(prize.value)} CR <span>demo value</span>
+                        </strong>
+                        <p className="stock-line">
+                          Sample stock: {remaining} / {prize.startingQuantity} packs
+                          {!showAllStock && machineTotal > 0
+                            ? ` · ${((remaining / machineTotal) * 100).toFixed(1)}% current odds`
+                            : ""}
+                        </p>
+                      </div>
+                    </article>
+                  );
+                },
+              )}
             </div>
             <p className="dialog-note">
-              Preview prizes and values are illustrative. Live inventory and
-              odds will replace this sample pool.
+              One sealed pack per pull. Each remaining pack has the same chance
+              in its machine; the shown percentages are rounded. Tiers and
+              credit values are provisional. Demo resale returns the pack to its
+              sample pool.
             </p>
+
             <button
               className="primary-button full-width"
               onClick={() => setModal(null)}
@@ -855,8 +982,8 @@ export default function Arcade() {
                 <section>
                   <h3>Find your next collectible</h3>
                   <p>
-                    Spend play credits and reveal one sample prize. You start
-                    with 250 credits.
+                    Spend play credits and reveal one sealed Lorcana booster
+                    pack. You start with 250 credits.
                   </p>
                 </section>
               </div>
@@ -872,9 +999,10 @@ export default function Arcade() {
               </div>
             </div>
             <p className="dialog-note">
-              This local prototype uses sample inventory. No purchases, wallet
-              signatures, payouts, or shipments occur. The demo resale rate is
-              80% of sample item value.
+              This local, per-browser demo uses fictional sample stock only. No
+              physical inventory is reserved. No purchases, wallet signatures,
+              payouts, or shipments occur. The demo resale rate is 80% of demo
+              item value.
             </p>
             <button
               className="primary-button full-width"

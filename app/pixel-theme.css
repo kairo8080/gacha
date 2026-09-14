@@ -1902,3 +1902,101 @@ h1 > span {
     grid-template-columns: 1fr;
   }
 }
+
+/* v0.1.0-11 — compact stock details stay inside the existing prize dialog. */
+.prize-symbol {
+  position: relative;
+}
+.prize-set-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -8px;
+  max-width: 82px;
+  overflow: hidden;
+  padding: 3px 4px;
+  border: 2px solid #0b1529;
+  background: #dceafd;
+  color: #17253d;
+  font-size: 7px;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pool-stock-intro {
+  margin-bottom: 8px;
+}
+.pool-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 14px;
+  padding: 8px 10px;
+  border: 3px solid #587397;
+  background: #111d32;
+  color: #a9bfdc;
+  font-size: 18px;
+}
+.pool-summary > span:first-child {
+  color: var(--lime);
+}
+.pool-dialog-item .prize-symbol .prize-set-badge {
+  display: none;
+}
+.machine-mini-badge {
+  display: inline-block;
+  margin-right: 5px;
+  padding: 2px 4px;
+  border: 1px solid currentColor;
+  font-size: 13px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.machine-mini-badge.common {
+  color: #40c7f4;
+}
+.machine-mini-badge.rare {
+  color: #c073f5;
+}
+.machine-mini-badge.epic {
+  color: #ffd34d;
+}
+.pool-dialog-item .stock-line {
+  margin-top: 5px;
+  color: #d1deef;
+  font-size: 16px;
+  line-height: 1.2;
+}
+.pool-toggle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  margin: 7px 0 14px;
+}
+.legacy-session-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: fixed;
+  right: 18px;
+  bottom: 52px;
+  left: 18px;
+  z-index: 12;
+  max-width: 440px;
+  margin-inline: auto;
+  padding: 9px 12px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .prize-set-badge {
+    max-width: 70px;
+    font-size: 6px;
+  }
+  .pool-summary {
+    font-size: 16px;
+  }
+  .pool-dialog-item .stock-line {
+    font-size: 16px;
+  }
+}

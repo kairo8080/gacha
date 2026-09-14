@@ -32,7 +32,7 @@ body {
 button,
 .mono,
 .eyebrow,
-.beta-tag,
+.release-version,
 .demo-label,
 .sample-badge,
 .prize-type,
@@ -121,9 +121,10 @@ svg {
   margin-top: 8px;
   color: #bdd0e5;
 }
-.beta-tag {
-  font-size: 14px;
-  letter-spacing: 1px;
+.release-version {
+  font-size: 16px;
+  letter-spacing: 0;
+  white-space: nowrap;
   padding: 2px 6px;
   border: 2px solid #506784;
   color: #a7bfdf;

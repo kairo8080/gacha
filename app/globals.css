@@ -64,7 +64,7 @@ a {
 }
 .mono,
 .eyebrow,
-.beta-tag,
+.release-version,
 .demo-label,
 .sample-badge,
 .prize-type,
@@ -141,7 +141,7 @@ a {
   margin-top: 6px;
   font-weight: 400;
 }
-.beta-tag {
+.release-version {
   font-size: 10px;
   letter-spacing: 0.8px;
   color: var(--muted);
@@ -1596,9 +1596,6 @@ h1 > span {
   }
   .brand {
     font-size: 20px;
-  }
-  .beta-tag {
-    display: none;
   }
 }
 @media (max-width: 960px) {

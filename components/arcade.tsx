@@ -41,6 +41,7 @@ import {
   type MachineId,
   type Prize,
 } from "@/lib/demo";
+import { APP_VERSION } from "@/lib/version";
 
 const credits = (value: number) =>
   new Intl.NumberFormat("en", { maximumFractionDigits: 2 }).format(value);
@@ -338,7 +339,9 @@ export default function Arcade() {
           <span>
             GACHA<span className="brand-sub">ARCADE</span>
           </span>
-          <span className="beta-tag">BETA</span>
+          <span className="release-version" aria-label={`Version ${APP_VERSION}`}>
+            {APP_VERSION}
+          </span>
         </button>
         <nav aria-label="Main navigation">
           <button
@@ -417,7 +420,7 @@ export default function Arcade() {
             </p>
           </div>
           <div className="edition">
-            <span>V0.1.0</span>
+            <span>{APP_VERSION}</span>
             <span>BETA EDITION</span>
           </div>
         </div>
@@ -809,7 +812,7 @@ export default function Arcade() {
             <span>Made for collectors.</span>
             <span className="footer-dot">·</span>
             <button onClick={() => setModal("how")}>How it works</button>
-            <span className="version">v0.1.0 beta</span>
+            <span className="version">{APP_VERSION} beta</span>
           </div>
         </footer>
       </main>

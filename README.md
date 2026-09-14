@@ -1,4 +1,4 @@
-# Gacha Arcade — v0.1.0 beta
+# Gacha Arcade — v0.1.2
 
 A local, simulated Lorcana collectible arcade using the owner's original pixel art. Built with Next.js, TypeScript, and React; fonts and artwork are served locally.
 
@@ -11,7 +11,13 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. No environment variables or service credentials are required for this iteration.
 
-## Current iteration: v0.1.0-11
+## Current release: v0.1.2
+
+The visible release label is sourced from the `version` field in `package.json`; the npm lockfile must stay synchronized with it. For each published update, increment the patch version once, make the matching version commit, create the matching Git tag, and publish the matching GitHub release. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
+
+Current iteration: **v0.1.0-12 — Release versioning**. The next routine update will be **v0.1.3**; the next larger milestone will be **v0.2.0**.
+
+## Simulation experience (ticket v0.1.0-11)
 
 The simulation uses a public fixture of 14 Lorcana sets, with 100 fictional packs in every set (1,400 fictional packs total). View a machine’s remaining sample stock and per-set odds in the pool popup, or inspect all sample stock there. Pulls reserve one pack; demo resale returns it, while keeping and shipping previews leave it reserved. Stock and credits are local to each browser. See `docs/inventory-seed.md` for the public fixture and simulation rules.
 

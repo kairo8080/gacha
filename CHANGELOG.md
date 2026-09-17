@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.8 — 2026-09-17
+
+- Documented the standing release and rollback workflow; no product UI behavior changed apart from the release version.
+- Completed updates increment the patch once, synchronize `package.json`, lockfile, and UI, then receive a matching version commit, annotated immutable tag, GitHub release, push to the configured repository's default branch, and Vercel version verification. Previous tags and releases are retained for rollback by tag redeploy or revert as a new version; force-pushes and tag rewrites are prohibited.
+
 ## v0.1.7 — 2026-09-17
 
 - Kept machines stationary when selected and limited the selected state to brightness highlighting, including hover and keyboard focus states; machine position, sizing, and character rules are unchanged.

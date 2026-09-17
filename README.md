@@ -1,4 +1,4 @@
-# Gacha Arcade — v0.1.7
+# Gacha Arcade — v0.1.8
 
 A local, simulated Lorcana collectible arcade using the owner's original pixel art. Built with Next.js, TypeScript, and React; fonts and artwork are served locally.
 
@@ -11,11 +11,11 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. Admin login requires the server-only variables documented in `.env.example`; no wallet or payment credentials are used.
 
-## Current release: v0.1.7
+## Current release: v0.1.8
 
-The visible release label is sourced from the `version` field in `package.json`; the npm lockfile must stay synchronized with it. For each published update, increment the patch version once, make the matching version commit, create the matching Git tag, and publish the matching GitHub release. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
+The visible release label is sourced from the `version` field in `package.json`; the npm lockfile and UI must stay synchronized with it. Every completed update increments the patch version once, records a matching version commit, creates an annotated immutable Git tag, publishes a matching GitHub release, pushes the commit and tag to the configured repository's default branch, and verifies the deployed Vercel version. Previous tags and releases remain available for rollback by redeploying a tag or reverting as a new version; never force-push or rewrite tags. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
 
-Current iteration: **v0.1.7 — Stationary machine selection highlight**. The next routine update will be **v0.1.8**; the next larger milestone will be **v0.2.0**.
+Current iteration: **v0.1.8 — Standing release and rollback workflow**. The next routine update will be **v0.1.9**; the next larger milestone will be **v0.2.0**.
 
 The public `/dev` route is an annotated working arcade for review. It is explicitly simulated, marked `noindex`, and contains no admin data or credentials, private stock counts, or real payments. Its browser-local demo wallet and collection follow the main simulation. UI-region labels A01–A24 update across machine, pull, result, and collection states; the label toggle is available below the hero. The extra demo/subheader and introductory copy were removed; the demo note and reset control live in the top header. Scene sizing is responsive, and the character’s tallest idle pose is sized to two-thirds of the machine’s visible artwork height after accounting for transparent sprite margins; its natural idle bob is unchanged.
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.4 — 2026-09-17
+
+- Compact admin metrics, machine, stock, and shipping overviews with bounded scrolling for long tables.
+- Embedded player result, wallet, how-to, stock, reset, and redeem panels, plus inline persistent collection confirmation status.
+- Kept desktop views compact where possible while allowing mobile scrolling for readable controls.
+
 ## v0.1.3 — 2026-09-17
 
 - Added protected `/admin` access with server-only password/session environment variables and same-browser demo stats.

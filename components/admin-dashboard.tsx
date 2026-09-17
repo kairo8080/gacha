@@ -54,6 +54,7 @@ export default function AdminDashboard() {
     .filter((item) => item.status === "queued" || item.status === "shipping")
     .slice()
     .reverse();
+  const queuedRequests = requests.filter((item) => item.status === "queued");
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +67,9 @@ export default function AdminDashboard() {
         const next: Session = await response.json();
         if (cancelled) return;
         setSession(next);
+        setError((current) =>
+          current === "Connection lost. Refresh to reconnect." ? "" : current,
+        );
         if (!next.authenticated) setWarehouse([]);
       } catch {
         if (!cancelled) {
@@ -277,11 +281,7 @@ export default function AdminDashboard() {
               }}
             >
               {tab.name}
-              {tab.id === "shipping" && (
-                <span>
-                  {requests.filter((item) => item.status === "queued").length}
-                </span>
-              )}
+              {tab.id === "shipping" && <span>{queuedRequests.length}</span>}
             </button>
           ))}
         </nav>
@@ -340,7 +340,7 @@ export default function AdminDashboard() {
               <Metric
                 label="SHIP REQUESTS"
                 value={metrics.shippingRequests}
-                note={`${requests.filter((item) => item.status === "queued").length} waiting`}
+                note={`${queuedRequests.length} waiting`}
                 accent="purple"
               />
             </section>
@@ -417,27 +417,54 @@ export default function AdminDashboard() {
                 </button>
                 <p>Demo pulls never reduce physical stock.</p>
               </section>
+              <section className="admin-panel admin-queue-summary">
+                <div className="admin-panel-title">
+                  <div>
+                    <h2>SHIPPING QUEUE</h2>
+                    <p>
+                      Day {demoDay} ·{" "}
+                      {shippingOpen
+                        ? "preview open"
+                        : `opens day ${SHIPPING_UNLOCK_DAY}`}
+                    </p>
+                  </div>
+                  <Truck size={19} />
+                </div>
+                <div className="admin-queue-meta">
+                  <strong>{queuedRequests.length}</strong>
+                  <span>WAITING</span>
+                  <button onClick={() => setSection("shipping")}>
+                    QUEUE <ArrowRight size={15} />
+                  </button>
+                </div>
+                {requests.length === 0 ? (
+                  <p className="admin-queue-empty">
+                    No requests in this browser.
+                  </p>
+                ) : (
+                  <div
+                    className="admin-mini-queue"
+                    aria-label="Recent shipping requests"
+                  >
+                    {requests.slice(0, 2).map((item) => (
+                      <div key={item.id}>
+                        <span className={`admin-tier ${item.machineId}`}>
+                          {item.machineId}
+                        </span>
+                        <strong>{item.prize.name}</strong>
+                        <small>
+                          {getShippingStage(item, demoDay) === "ready"
+                            ? "READY"
+                            : item.status === "shipping"
+                              ? "SHIPPING"
+                              : "QUEUED"}
+                        </small>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
             </div>
-            <section className="admin-shipping-strip">
-              <Truck size={28} />
-              <div>
-                <strong>
-                  {shippingOpen
-                    ? "SHIPPING PREVIEW OPEN"
-                    : "QUEUE NOW. SHIP FROM DAY 60."}
-                </strong>
-                <span>
-                  {requests.filter((item) => item.status === "queued").length}{" "}
-                  waiting · Demo day {demoDay}
-                </span>
-              </div>
-              <button
-                className="admin-secondary"
-                onClick={() => setSection("shipping")}
-              >
-                VIEW QUEUE <ArrowRight size={17} />
-              </button>
-            </section>
           </>
         )}
 
@@ -583,7 +610,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </section>
-            <section className="admin-panel">
+            <section className="admin-panel admin-shipping-panel">
               <div className="admin-panel-title">
                 <h2>SHIPPING REQUESTS</h2>
                 <span>{requests.length} REQUESTS</span>

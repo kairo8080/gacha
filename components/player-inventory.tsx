@@ -68,8 +68,11 @@ export function PlayerInventory({
     item: InventoryItem;
     action: "redeem" | "queue";
   } | null>(null);
-  const confirmDialog = useRef<HTMLDialogElement>(null);
-  const confirmTrigger = useRef<HTMLButtonElement | null>(null);
+  const actionRefs = useRef(new Map<string, HTMLButtonElement>());
+  const confirmFocusKey = useRef("");
+  const confirmAction = useRef<HTMLButtonElement | null>(null);
+  const historyTab = useRef<HTMLButtonElement | null>(null);
+  const [actionStatus, setActionStatus] = useState("");
 
   const collection = state.items.filter((item) => item.status !== "sold");
   const best = state.items.reduce<InventoryItem | null>(
@@ -111,30 +114,47 @@ export function PlayerInventory({
       );
   }, [filter, query, sort, state.items]);
 
+  const confirmItem = confirm
+    ? state.items.find((item) => item.id === confirm.item.id)
+    : null;
+  const confirmIsValid =
+    confirm !== null &&
+    confirmItem !== undefined &&
+    confirmItem !== null &&
+    confirmItem.status === (confirm.action === "redeem" ? "held" : "redeemed");
+
   function act(action: Parameters<typeof demoReducer>[1]) {
     setState((current) => demoReducer(current, action));
   }
 
-  function openConfirm(
-    item: InventoryItem,
-    action: "redeem" | "queue",
-    trigger: HTMLButtonElement,
-  ) {
-    confirmTrigger.current = trigger;
+  function openConfirm(item: InventoryItem, action: "redeem" | "queue") {
+    confirmFocusKey.current = `${item.id}:${action}`;
+    setActionStatus("");
     setConfirm({ item, action });
   }
 
-  function closeConfirm() {
+  function closeConfirm(returnToTabs = false) {
     setConfirm(null);
-    requestAnimationFrame(() => confirmTrigger.current?.focus());
+    requestAnimationFrame(() => {
+      const action = actionRefs.current.get(confirmFocusKey.current);
+      const target =
+        !returnToTabs && action?.isConnected ? action : historyTab.current;
+      target?.focus({ preventScroll: true });
+    });
   }
 
   useEffect(() => {
-    const dialog = confirmDialog.current;
-    if (!dialog) return;
-    if (confirm && !dialog.open) dialog.showModal();
-    if (!confirm && dialog.open) dialog.close();
-  }, [confirm]);
+    if (!confirm) return;
+    if (!confirmIsValid) {
+      setConfirm(null);
+      setActionStatus("That item changed in another demo session.");
+      requestAnimationFrame(() =>
+        historyTab.current?.focus({ preventScroll: true }),
+      );
+      return;
+    }
+    requestAnimationFrame(() => confirmAction.current?.focus());
+  }, [confirm, confirmIsValid]);
 
   const counts: Record<InventoryFilter, number> = {
     collection: state.items.filter((item) => item.status === "held").length,
@@ -146,9 +166,14 @@ export function PlayerInventory({
     history: state.items.length,
   };
   const clearFilters = () => {
+    setConfirm(null);
     setFilter("history");
     setQuery("");
     setSort("newest");
+    setActionStatus("Showing your full pull history.");
+    requestAnimationFrame(() =>
+      historyTab.current?.focus({ preventScroll: true }),
+    );
   };
 
   return (
@@ -198,8 +223,13 @@ export function PlayerInventory({
           ).map(([id, label]) => (
             <button
               key={id}
+              ref={id === "history" ? historyTab : undefined}
               className={filter === id ? "active" : ""}
-              onClick={() => setFilter(id)}
+              onClick={() => {
+                setConfirm(null);
+                setFilter(id);
+                setActionStatus(`Showing ${label.toLowerCase()} pulls.`);
+              }}
               role="tab"
               aria-selected={filter === id}
             >
@@ -212,7 +242,10 @@ export function PlayerInventory({
           SEARCH
           <input
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setConfirm(null);
+              setQuery(event.target.value);
+            }}
             placeholder="set or tier"
           />
         </label>
@@ -220,9 +253,10 @@ export function PlayerInventory({
           SORT
           <select
             value={sort}
-            onChange={(event) =>
-              setSort(event.target.value as "newest" | "value")
-            }
+            onChange={(event) => {
+              setConfirm(null);
+              setSort(event.target.value as "newest" | "value");
+            }}
           >
             <option value="newest">Newest</option>
             <option value="value">Value</option>
@@ -269,6 +303,8 @@ export function PlayerInventory({
         <div className="collection-grid">
           {items.map((item) => {
             const shippingStage = getShippingStage(item, demoDay);
+            const isConfirmingItem =
+              confirmIsValid && confirm?.item.id === item.id;
             return (
               <article
                 className="collection-card"
@@ -303,30 +339,44 @@ export function PlayerInventory({
                   <span>PULLED · {dateLabel(item.createdAt)}</span>
                   <span>{statusLabel(item, demoDay)}</span>
                 </div>
-                {item.status === "held" && (
+                {item.status === "held" && !isConfirmingItem && (
                   <div className="collection-actions">
                     <button
-                      onClick={() => act({ type: "sell", itemId: item.id })}
+                      onClick={() => {
+                        act({ type: "sell", itemId: item.id });
+                        setActionStatus(
+                          `${item.prize.name} sold for ${credits(resaleValue(item.prize))} CR in this demo.`,
+                        );
+                        requestAnimationFrame(() =>
+                          historyTab.current?.focus({ preventScroll: true }),
+                        );
+                      }}
                     >
                       <RotateCcw size={15} />
                       Sell {credits(resaleValue(item.prize))}
                     </button>
                     <button
-                      onClick={(event) =>
-                        openConfirm(item, "redeem", event.currentTarget)
-                      }
+                      ref={(node) => {
+                        const key = `${item.id}:redeem`;
+                        if (node) actionRefs.current.set(key, node);
+                        else actionRefs.current.delete(key);
+                      }}
+                      onClick={() => openConfirm(item, "redeem")}
                     >
                       <Check size={15} />
                       Redeem
                     </button>
                   </div>
                 )}
-                {item.status === "redeemed" && (
+                {item.status === "redeemed" && !isConfirmingItem && (
                   <button
                     className="queue-button"
-                    onClick={(event) =>
-                      openConfirm(item, "queue", event.currentTarget)
-                    }
+                    ref={(node) => {
+                      const key = `${item.id}:queue`;
+                      if (node) actionRefs.current.set(key, node);
+                      else actionRefs.current.delete(key);
+                    }}
+                    onClick={() => openConfirm(item, "queue")}
                   >
                     <Truck size={16} />
                     Queue shipping
@@ -346,54 +396,69 @@ export function PlayerInventory({
                     Shipping · demo
                   </div>
                 )}
+                {isConfirmingItem && confirm && (
+                  <section
+                    className="collection-inline-confirm"
+                    aria-label={`${confirm.action} ${item.prize.name}`}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        event.preventDefault();
+                        closeConfirm();
+                      }
+                    }}
+                  >
+                    <span className="eyebrow">DEMO ACTION</span>
+                    <strong>
+                      {confirm.action === "redeem"
+                        ? "Redeem this pull?"
+                        : "Queue shipping?"}
+                    </strong>
+                    <p>
+                      {confirm.action === "redeem"
+                        ? `Redeem unlocks shipping. You can queue after confirmation.`
+                        : `Shipping opens after day ${SHIPPING_UNLOCK_DAY}. This saves only a demo queue.`}
+                    </p>
+                    <div>
+                      <button
+                        className="text-button"
+                        onClick={() => closeConfirm()}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        ref={confirmAction}
+                        className="primary-button"
+                        onClick={() => {
+                          if (!confirmIsValid) {
+                            setActionStatus(
+                              "That item changed in another demo session.",
+                            );
+                            closeConfirm(true);
+                            return;
+                          }
+                          act({ type: confirm.action, itemId: item.id });
+                          setActionStatus(
+                            confirm.action === "redeem"
+                              ? `${item.prize.name} redeemed. You can now queue demo shipping.`
+                              : `${item.prize.name} added to the demo shipping queue.`,
+                          );
+                          closeConfirm(true);
+                        }}
+                      >
+                        {confirm.action === "redeem" ? "Redeem" : "Queue"}
+                      </button>
+                    </div>
+                  </section>
+                )}
               </article>
             );
           })}
         </div>
       )}
 
-      <dialog
-        ref={confirmDialog}
-        className="collection-confirm"
-        aria-label={
-          confirm ? `${confirm.action} item` : "Confirm collection action"
-        }
-        onCancel={closeConfirm}
-        onClose={() => {
-          if (confirm) closeConfirm();
-        }}
-      >
-        {confirm && (
-          <div>
-            <span className="eyebrow">DEMO ACTION</span>
-            <h2>
-              {confirm.action === "redeem"
-                ? "Redeem this pull?"
-                : "Queue shipping?"}
-            </h2>
-            <p>{confirm.item.prize.name}</p>
-            <p className="dialog-note">
-              {confirm.action === "redeem"
-                ? `Redeem unlocks the shipping queue. Shipping opens ${SHIPPING_UNLOCK_DAY} days after launch; you can queue now.`
-                : `Shipping opens ${SHIPPING_UNLOCK_DAY} days after launch. This only saves a demo queue; no address or shipment is created.`}
-            </p>
-            <div>
-              <button className="text-button" onClick={closeConfirm}>
-                Cancel
-              </button>
-              <button
-                className="primary-button"
-                onClick={() => {
-                  act({ type: confirm.action, itemId: confirm.item.id });
-                  closeConfirm();
-                }}
-              >
-                {confirm.action === "redeem" ? "Redeem" : "Queue shipping"}
-              </button>
-            </div>
-          </div>
-        )}
-      </dialog>
+      <p className="collection-action-status" role="status" aria-live="polite">
+        {actionStatus}
+      </p>
     </section>
   );
 }

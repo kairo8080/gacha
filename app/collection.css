@@ -1,23 +1,28 @@
-/* Player collection: local demo records, rendered with the shared pixel skin. */
+/* Player collection: compact, bounded desktop inventory with card-local actions. */
 .player-collection {
   min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   border: 3px solid #586f92;
   background: #202e48;
   box-shadow:
     inset 2px 2px #768caf,
     inset -2px -2px #142038,
     5px 5px #080f20;
-  padding: 22px;
+  padding: 13px;
 }
 .collection-scoreboard {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border: 3px solid #101b30;
+  grid-template-columns: 0.7fr 1.2fr 1fr 1.7fr;
+  border: 2px solid #101b30;
   background: #17243b;
 }
 .collection-scoreboard > div {
   min-width: 0;
-  padding: 13px 15px;
+  padding: 7px 10px;
   border-right: 2px solid #405573;
 }
 .collection-scoreboard > div:last-child {
@@ -28,17 +33,17 @@
 .collection-sort {
   display: block;
   color: #a9bfdc;
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: 0.5px;
 }
 .collection-scoreboard strong {
   display: block;
   color: #f5e4a9;
-  font-size: 32px;
+  font-size: 23px;
   line-height: 1.08;
 }
 .collection-scoreboard small {
-  font-size: 15px;
+  font-size: 14px;
   color: #bdd0e5;
 }
 .best-pull {
@@ -46,7 +51,7 @@
 }
 .best-pull b {
   display: block;
-  margin-top: 3px;
+  margin-top: 2px;
   color: #d7e5f5;
   font-size: 16px;
   overflow: hidden;
@@ -56,25 +61,26 @@
 .collection-controls {
   display: flex;
   align-items: end;
-  gap: 12px;
-  border-bottom: 3px solid #142038;
-  padding: 20px 0;
+  gap: 8px;
+  border-bottom: 2px solid #142038;
+  padding: 0 0 9px;
 }
 .collection-tabs {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   flex-wrap: wrap;
   flex: 1;
 }
 .collection-tabs button {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  min-height: 36px;
   background: #182842;
   border: 2px solid #405573;
   color: #b5c7de;
-  padding: 6px 9px;
-  font-size: 17px;
+  padding: 4px 7px;
+  font-size: 16px;
 }
 .collection-tabs button:hover {
   border-color: #7896ba;
@@ -92,7 +98,7 @@
   height: 18px;
   background: #142139;
   color: #b9cce2;
-  font-size: 13px;
+  font-size: 14px;
 }
 .collection-tabs button.active span {
   background: #b7e4d2;
@@ -100,7 +106,7 @@
 }
 .collection-search,
 .collection-sort {
-  font-size: 13px;
+  font-size: 14px;
 }
 .collection-search input,
 .collection-sort select {
@@ -108,33 +114,39 @@
   background: #111d32;
   border: 2px solid #587397;
   color: #e7eff7;
-  font: 18px var(--font-pixel-body);
-  height: 34px;
-  padding: 2px 7px;
+  font: 16px var(--font-pixel-body);
+  min-height: 36px;
+  padding: 2px 6px;
 }
 .collection-search input:focus,
-.collection-sort select:focus {
+.collection-sort select:focus,
+.collection-tabs button:focus-visible,
+.collection-card button:focus-visible {
   outline: 2px solid var(--lime);
   outline-offset: 2px;
 }
 .collection-search input {
-  width: 138px;
+  width: 124px;
 }
 .collection-grid {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  padding-top: 20px;
+  align-content: start;
+  gap: 10px;
+  padding: 1px 4px 4px 1px;
 }
 .collection-card {
   position: relative;
   min-width: 0;
   background: #1b2941;
-  border: 3px solid #526c91;
+  border: 2px solid #526c91;
   box-shadow:
-    inset 2px 2px #536f95,
-    inset -2px -2px #101b30;
-  padding: 15px;
+    inset 1px 1px #536f95,
+    inset -1px -1px #101b30;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   text-align: center;
@@ -146,13 +158,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
-.collection-card .tier-badge {
-  font-size: 13px;
+.collection-card .tier-badge,
+.collection-card .item-status {
+  font-size: 14px;
 }
 .collection-card .item-status {
-  font-size: 13px;
   color: #b9cbe0;
 }
 .collection-card .item-status.sold {
@@ -166,12 +178,12 @@
   color: #caa9ed;
 }
 .collection-symbol {
-  width: 78px;
-  height: 88px;
-  margin: 16px auto 8px;
-  border: 3px solid var(--tier-color);
+  width: 58px;
+  height: 62px;
+  margin: 9px auto 6px;
+  border: 2px solid var(--tier-color);
   background: #15213a;
-  box-shadow: 4px 4px #080f20;
+  box-shadow: 3px 3px #080f20;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -182,42 +194,42 @@
   background: #2b2537;
 }
 .collection-symbol span {
-  font-size: 12px;
-  margin-top: 6px;
+  font-size: 14px;
+  margin-top: 3px;
 }
 .collection-value {
-  font-size: 36px;
+  font-size: 27px;
   color: #f3d887;
   line-height: 1;
   text-shadow: 2px 2px #101827;
 }
 .collection-value small {
-  font-size: 15px;
+  font-size: 14px;
 }
 .collection-card h3 {
   font-family: var(--font-pixel-title);
-  font-size: 11px;
-  line-height: 1.55;
-  margin: 12px 0 5px;
+  font-size: 9px;
+  line-height: 1.45;
+  margin: 8px 0 3px;
   color: #e8eff7;
 }
 .collection-card p {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.15;
   color: #aebed4;
-  margin: 0 0 12px;
-  min-height: 42px;
+  margin: 0 0 8px;
+  min-height: 31px;
 }
 .item-trail {
   margin-top: auto;
   border-top: 2px solid #324967;
-  padding-top: 9px;
+  padding-top: 6px;
   display: flex;
   justify-content: space-between;
-  gap: 7px;
+  gap: 6px;
   text-align: left;
   color: #9fb4cf;
-  font-size: 13px;
+  font-size: 16px;
 }
 .item-trail span:last-child {
   text-align: right;
@@ -225,20 +237,21 @@
 .collection-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 7px;
-  margin-top: 12px;
+  gap: 5px;
+  margin-top: 8px;
 }
 .collection-actions button,
 .queue-button {
+  min-height: 36px;
   border: 2px solid #6681a4;
   background: #2c405f;
   color: #e2ebf5;
-  font: 17px var(--font-pixel-body);
-  padding: 8px 4px;
+  font: 16px var(--font-pixel-body);
+  padding: 6px 3px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
 }
 .collection-actions button:hover,
 .queue-button:hover {
@@ -247,45 +260,86 @@
 }
 .queue-button {
   width: 100%;
-  margin-top: 12px;
+  margin-top: 8px;
   background: #514333;
   border-color: #b19556;
   color: #ffebaf;
 }
 .queue-status {
-  margin-top: 12px;
-  padding: 9px;
+  min-height: 36px;
+  margin-top: 8px;
+  padding: 6px;
   background: #263650;
   color: #c5d9eb;
-  font-size: 17px;
+  font-size: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 7px;
+  gap: 5px;
+}
+.collection-inline-confirm {
+  margin-top: 9px;
+  border: 2px solid #b19556;
+  background: #2d3950;
+  padding: 8px;
+  text-align: left;
+}
+.collection-inline-confirm .eyebrow {
+  display: block;
+  color: #f4d58b;
+  font-size: 14px;
+}
+.collection-inline-confirm strong {
+  display: block;
+  color: #f6e7bb;
+  font-size: 16px;
+  margin-top: 3px;
+}
+.collection-inline-confirm p {
+  min-height: 0;
+  margin: 4px 0 7px;
+  color: #c6d5e7;
+  font-size: 16px;
+}
+.collection-inline-confirm > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.collection-inline-confirm .text-button {
+  min-height: 36px;
+  color: #d1ddeb;
+  font-size: 16px;
+}
+.collection-inline-confirm .primary-button {
+  min-height: 36px;
+  font-size: 16px;
+  padding: 5px 7px;
 }
 .collection-empty {
-  min-height: 360px;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   text-align: center;
-  padding: 50px 20px;
+  padding: 24px 20px;
   color: #b8c9df;
 }
 .collection-empty > svg {
   color: var(--lime);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 .collection-empty h2 {
   font-family: var(--font-pixel-title);
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.6;
   color: #eff5fc;
 }
 .collection-empty p {
   max-width: 330px;
-  margin: 10px 0 22px;
+  margin: 8px 0 14px;
 }
 .collection-clear {
   color: #d5e6f7;
@@ -296,45 +350,11 @@
   color: var(--lime);
   border-color: var(--lime);
 }
-.collection-confirm {
-  width: min(430px, calc(100vw - 32px));
-  margin: auto;
-  padding: 0;
-  border: 3px solid #7c99be;
-  background: #202e48;
-  color: var(--text);
-  box-shadow: 7px 7px #080f20;
-}
-.collection-confirm::backdrop {
-  background: #080f20d9;
-}
-.collection-confirm > div {
-  padding: 24px;
-}
-.collection-confirm h2 {
-  font-family: var(--font-pixel-title);
+.collection-action-status {
+  min-height: 19px;
+  margin: 0;
+  color: #bfe7ce;
   font-size: 16px;
-  line-height: 1.7;
-  margin: 11px 0;
-}
-.collection-confirm p {
-  font-size: 21px;
-  margin: 5px 0;
-}
-.collection-confirm .dialog-note {
-  font-size: 18px;
-  color: #adc0d7;
-  line-height: 1.25;
-}
-.collection-confirm > div > div {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-  margin-top: 20px;
-}
-.collection-confirm .text-button {
-  color: #d1ddeb;
 }
 .site-footer a {
   color: #b8cce4;
@@ -366,21 +386,22 @@
 }
 @media (max-width: 760px) {
   .player-collection {
-    padding: 15px;
+    min-height: auto;
+    padding: 11px;
   }
   .collection-scoreboard strong {
-    font-size: 27px;
+    font-size: 21px;
   }
   .collection-controls {
     align-items: stretch;
-    padding: 15px 0;
+    padding-bottom: 10px;
   }
   .collection-tabs {
-    gap: 4px;
+    gap: 3px;
   }
   .collection-tabs button {
-    font-size: 15px;
-    padding: 5px 7px;
+    font-size: 16px;
+    padding: 4px 5px;
   }
   .collection-search {
     flex: 1;
@@ -389,34 +410,24 @@
     width: 100%;
   }
   .collection-sort {
-    width: 105px;
+    width: 94px;
   }
   .collection-sort select {
     width: 100%;
   }
   .collection-grid {
+    min-height: auto;
+    overflow: visible;
     grid-template-columns: 1fr;
-    gap: 13px;
+    gap: 9px;
   }
   .collection-card {
-    padding: 14px;
+    padding: 11px;
   }
   .collection-card p {
     min-height: 0;
   }
   .item-trail {
-    font-size: 12px;
-  }
-  .collection-confirm > div {
-    padding: 20px;
-  }
-  .collection-confirm h2 {
-    font-size: 14px;
-  }
-  .collection-confirm p {
-    font-size: 19px;
-  }
-  .collection-confirm .dialog-note {
-    font-size: 17px;
+    font-size: 16px;
   }
 }

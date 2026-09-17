@@ -1,4 +1,4 @@
-# Gacha Arcade — v0.1.3
+# Gacha Arcade — v0.1.4
 
 A local, simulated Lorcana collectible arcade using the owner's original pixel art. Built with Next.js, TypeScript, and React; fonts and artwork are served locally.
 
@@ -11,17 +11,19 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. Admin login requires the server-only variables documented in `.env.example`; no wallet or payment credentials are used.
 
-## Current release: v0.1.3
+## Current release: v0.1.4
 
 The visible release label is sourced from the `version` field in `package.json`; the npm lockfile must stay synchronized with it. For each published update, increment the patch version once, make the matching version commit, create the matching Git tag, and publish the matching GitHub release. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
 
-Current iteration: **v0.1.0-15 — Redemption and shipping state**. The next routine update will be **v0.1.4**; the next larger milestone will be **v0.2.0**.
+Current iteration: **v0.1.0-16 — Compact dashboards and inline actions**. The next routine update will be **v0.1.5**; the next larger milestone will be **v0.2.0**.
 
 ## Simulation experience (ticket v0.1.0-11)
 
-The simulation uses a public fixture of 14 Lorcana sets, with 100 fictional packs in every set (1,400 fictional packs total). View a machine’s remaining sample stock and per-set odds in the pool popup, or inspect all sample stock there. Pulls reserve one pack; demo resale returns it, while keeping and shipping previews leave it reserved. Stock and credits are local to each browser. See `docs/inventory-seed.md` for the public fixture and simulation rules.
+The simulation uses a public fixture of 14 Lorcana sets, with 100 fictional packs in every set (1,400 fictional packs total). View a machine’s remaining sample stock and per-set odds in the inline pool panel, or inspect all sample stock there. Pulls reserve one pack; demo resale returns it, while keeping and shipping previews leave it reserved. Stock and credits are local to each browser. See `docs/inventory-seed.md` for the public fixture and simulation rules.
 
-The arcade is a single-screen hero: the machine scene and pull controls share the available viewport height, with sample prize details opened from the machine panel. Portrait phones use a compact control bar. Inventory and dialogs retain scrolling when their contents need more room; short landscape screens allow page scrolling to keep controls accessible.
+The arcade is a single-screen hero: the machine scene and pull controls share the available viewport height, with sample prize details embedded in the machine panel. Portrait phones use a compact control bar. Long tables use bounded scrolling, and mobile screens may scroll when needed to keep controls readable.
+
+The admin dashboard keeps metrics, machine, stock, and shipping summaries visible at a glance with bounded scrolling for long tables. Player result, wallet, how-to, stock, reset, and redeem panels stay embedded in the screen. Collection confirmations use an inline card with persistent status.
 
 The complete interface now uses VT323 for readable pixel text, Press Start 2P for game headings, original crisp 16×16 SVG icons, hard-edged frames and buttons, and a slate-blue/cyan/purple/gold/mint palette matched to the supplied artwork. Visual tokens and the shared skin live in `app/pixel-theme.css`; structural layouts live in `app/globals.css`.
 
@@ -48,6 +50,7 @@ npm run build
 The production homepage is prerendered. Browser smoke path: select each machine → preview prizes → pull → keep or resell → inventory → preview shipping → history → reload. Check viewport fit on desktop and portrait phones, keyboard access, and the insufficient-credit/reset state.
 
 v0.1.3 verification: typecheck, 25 tests, and production build passed. Browser checks covered login/logout, stock views, collection history, redemption, queueing, the day-60 unlock, shipping status, tab synchronization, and phone layout. Production runtime checks confirmed unauthorized inventory returns 401 and authorized production access never returns the local warehouse file. Client bundles and deployment traces contain no admin secrets or private inventory files.
+v0.1.4 verification: typecheck, all 25 tests, and production build passed. Browser checks covered inline stock/help/wallet/reset panels, prize reveal, keep/resell, card-local redemption and queue confirmations, cancellation focus, and tab synchronization. The admin overview fits 1280×720 and 1366×768; detail tables scroll inside the screen. Arcade and prize actions fit 390×844 and 376×668 phone viewports. Mobile admin and long collections retain natural scrolling for readable controls. The production build was also checked in-browser.
 
 ## Next iteration
 

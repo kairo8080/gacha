@@ -49,7 +49,7 @@ const accents: Record<MachineId, string> = {
   rare: "#c073f5",
   epic: "#ffd34d",
 };
-type Modal = "how" | "wallet" | "result" | "redeem" | "reset" | "pool" | null;
+type Panel = "how" | "wallet" | "result" | "redeem" | "reset" | "pool" | null;
 
 function MachineSprite({
   id,
@@ -105,7 +105,7 @@ function ClawSequence({ id }: { id: MachineId }) {
   );
 }
 
-function Dialog({
+function InlinePanel({
   open,
   onClose,
   children,
@@ -116,31 +116,36 @@ function Dialog({
   children: ReactNode;
   title: string;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
-    const dialog = ref.current;
-    if (open && dialog && !dialog.open) dialog.showModal();
-    if (!open && dialog?.open) dialog.close();
-  }, [open]);
+    if (open) heading.current?.focus({ preventScroll: true });
+  }, [open, title]);
+  if (!open) return null;
   return (
-    <dialog
-      ref={ref}
-      className="dialog"
+    <section
+      className="inline-panel"
       aria-label={title}
-      onCancel={onClose}
-      onClick={(event) => {
-        if (event.target === ref.current) onClose();
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onClose();
+        }
       }}
     >
-      <button
-        className="icon-button dialog-close"
-        aria-label="Close dialog"
-        onClick={onClose}
-      >
-        <X size={20} />
-      </button>
-      {children}
-    </dialog>
+      <div className="inline-panel-header">
+        <h2 ref={heading} tabIndex={-1}>
+          {title}
+        </h2>
+        <button
+          className="text-button"
+          onClick={onClose}
+          aria-label="Back from details"
+        >
+          Back <X size={16} />
+        </button>
+      </div>
+      <div className="inline-panel-body">{children}</div>
+    </section>
   );
 }
 
@@ -156,7 +161,8 @@ export default function Arcade() {
   useDemoPresence(true);
   const [selected, setSelected] = useState<MachineId>("common");
   const [view, setView] = useState<"arcade" | "inventory">("arcade");
-  const [modal, setModal] = useState<Modal>(null);
+  const [panel, setPanel] = useState<Panel>(null);
+  const panelTrigger = useRef<HTMLElement | null>(null);
   const [sound, setSound] = useState(false);
   const [running, setRunning] = useState(false);
   const [resultId, setResultId] = useState<string | null>(null);
@@ -165,13 +171,11 @@ export default function Arcade() {
   const [showAllStock, setShowAllStock] = useState(false);
   const pullLock = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const machine = machines.find((item) => item.id === selected)!;
 
   useEffect(() => {
     return () => {
       if (timer.current) clearTimeout(timer.current);
-      if (noticeTimer.current) clearTimeout(noticeTimer.current);
     };
   }, []);
 
@@ -186,10 +190,23 @@ export default function Arcade() {
     setState((current) => demoReducer(current, action));
   }
 
+  function openPanel(next: Panel) {
+    if (next && !panel)
+      panelTrigger.current = document.activeElement as HTMLElement;
+    setPanel(next);
+    if (!next)
+      requestAnimationFrame(() => {
+        const target = panelTrigger.current;
+        if (target?.isConnected) target.focus({ preventScroll: true });
+        else
+          (
+            document.querySelector<HTMLButtonElement>(".pull-button") ??
+            document.querySelector<HTMLButtonElement>(".nav-link")
+          )?.focus({ preventScroll: true });
+      });
+  }
   function notify(message: string) {
     setNotice(message);
-    if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(""), 4500);
   }
   function beep() {
     if (!sound) return;
@@ -219,7 +236,7 @@ export default function Arcade() {
     if (timer.current) clearTimeout(timer.current);
     setRunning(false);
     pullLock.current = false;
-    setModal("result");
+    openPanel("result");
   }
   function pull() {
     if (
@@ -275,7 +292,7 @@ export default function Arcade() {
   }
   function sell(item: InventoryItem) {
     act({ type: "sell", itemId: item.id });
-    setModal(null);
+    openPanel(null);
     notify(`Resold for ${credits(resaleValue(item.prize))} demo credits.`);
   }
   function select(id: MachineId) {
@@ -284,12 +301,287 @@ export default function Arcade() {
   function openInventory() {
     if (!running) {
       setView("inventory");
-      setModal(null);
+      setPanel(null);
+      setNotice("");
     }
   }
+  const panelContent = (
+    <InlinePanel
+      open={panel !== null}
+      onClose={() => openPanel(null)}
+      title={
+        panel === "result"
+          ? "Your demo prize"
+          : panel === "redeem"
+            ? "Redeem demo prize"
+            : panel === "reset"
+              ? "Reset demo"
+              : panel === "wallet"
+                ? "Demo wallet"
+                : panel === "pool"
+                  ? showAllStock
+                    ? "All sample stock"
+                    : `${machine.name} sample stock`
+                  : "How to play"
+      }
+    >
+      {panel === "pool" && (
+        <>
+          <div className="pool-meta">
+            <strong>
+              {showAllStock ? totalRemainingStock : selectedMachineStock}{" "}
+              <span>PACKS LEFT</span>
+            </strong>
+            <button
+              className="text-button"
+              onClick={() => setShowAllStock((current) => !current)}
+            >
+              {showAllStock ? machine.name + " pool" : "All 14 sets"}{" "}
+              <ChevronRight size={15} />
+            </button>
+          </div>
+          <p className="pool-caption">
+            Fictional stock · One sealed pack per pull
+          </p>
+          <div className="pool-stock-list">
+            {(showAllStock ? stockCatalog : machine.prizes).map((prize) => {
+              const tier = prize.machineId ?? selected;
+              const left = remainingStock(activeState, prize.id);
+              const total = machineStock(activeState, tier);
+              return (
+                <article
+                  className="pool-stock-row"
+                  key={prize.id}
+                  style={{ "--tier-color": accents[tier] } as CSSProperties}
+                >
+                  <div>
+                    <h3>{prize.name}</h3>
+                    <span>
+                      {showAllStock ? tier.toUpperCase() + " · " : ""}
+                      {left} left{" "}
+                      {total > 0
+                        ? "· " + ((left / total) * 100).toFixed(1) + "% odds"
+                        : "· Empty pool"}
+                    </span>
+                  </div>
+                  <strong>
+                    {credits(prize.value)} <small>CR</small>
+                  </strong>
+                </article>
+              );
+            })}
+          </div>
+          <p className="pool-caption">
+            100 sample packs per set at start. Equal chance per remaining pack;
+            odds rounded per machine. Resell returns a pack to its pool.
+          </p>
+        </>
+      )}
+      {panel === "how" && (
+        <>
+          <span className="eyebrow">WELCOME TO GACHA ARCADE</span>
+          <h2>PULL. KEEP. REPEAT.</h2>
+          <div className="how-steps">
+            <div>
+              <span>01</span>
+              <section>
+                <h3>Pick your machine</h3>
+                <p>
+                  Common, Rare, or Epic. Each has its own sample pool and demo
+                  price.
+                </p>
+              </section>
+            </div>
+            <div>
+              <span>02</span>
+              <section>
+                <h3>Find your next collectible</h3>
+                <p>
+                  Spend play credits and reveal one sealed Lorcana booster pack.
+                  You start with 250 credits.
+                </p>
+              </section>
+            </div>
+            <div>
+              <span>03</span>
+              <section>
+                <h3>Make it yours</h3>
+                <p>
+                  Keep it in your demo inventory, resell for play credits, or
+                  preview shipping.
+                </p>
+              </section>
+            </div>
+          </div>
+          <p className="panel-note">
+            Simulation only. Resell for 80% of sample value in play credits. No
+            real payments or shipping.
+          </p>
+          <button
+            className="primary-button full-width"
+            onClick={() => openPanel(null)}
+          >
+            Let’s play <ArrowRight size={17} />
+          </button>
+        </>
+      )}
+      {panel === "wallet" && (
+        <>
+          <span className="panel-icon">
+            <Wallet size={30} />
+          </span>
+          <span className="eyebrow">FREE PLAY WALLET</span>
+          <h2>YOUR PLAY CREDITS.</h2>
+          <div className="wallet-total">
+            {credits(activeState.balance)}
+            <span>demo credits</span>
+          </div>
+          <p>Saved in this browser. No cash value or withdrawals.</p>
+          <div className="panel-note">
+            Wallet connection comes later. Play free for now.
+          </div>
+          <a className="text-button" href="/admin">
+            Demo admin
+          </a>
+          <button
+            className="primary-button full-width"
+            onClick={() => openPanel(null)}
+          >
+            Back to the arcade <ArrowRight size={17} />
+          </button>
+        </>
+      )}
+      {panel === "result" && activeResult && (
+        <>
+          <span className="eyebrow">
+            {activeResult.status === "held"
+              ? "A NEW FIND FOR YOUR COLLECTION"
+              : "YOUR DEMO PRIZE"}
+          </span>
+          <h2>
+            {activeResult.status === "held" ? "New pull." : "Demo record."}
+          </h2>
+          <div
+            className="result-prize"
+            style={
+              {
+                "--tier-color": accents[activeResult.machineId],
+              } as CSSProperties
+            }
+          >
+            <PrizeSymbol prize={activeResult.prize} />
+            <span className="tier-badge">
+              {activeResult.machineId.toUpperCase()} MACHINE
+            </span>
+            <h3>{activeResult.prize.name}</h3>
+            <p>{activeResult.prize.detail}</p>
+            <strong>
+              {credits(activeResult.prize.value)} CR <span>sample value</span>
+            </strong>
+          </div>
+          {activeResult.status === "held" ? (
+            <>
+              <button
+                className="primary-button full-width"
+                onClick={() => {
+                  openPanel(null);
+                  notify("Kept in your demo inventory.");
+                }}
+              >
+                <Package size={18} />
+                Keep in inventory
+                <Check size={18} />
+              </button>
+              <div className="result-actions">
+                <button onClick={() => sell(activeResult)}>
+                  <RotateCcw size={17} />
+                  <span>
+                    Resell for {credits(resaleValue(activeResult.prize))} CR
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    openPanel("redeem");
+                  }}
+                >
+                  <Truck size={17} />
+                  <span>Redeem</span>
+                </button>
+              </div>
+              <p className="panel-note">
+                Sample value only. Your pull is already saved.
+              </p>
+            </>
+          ) : (
+            <p className="panel-note">
+              {activeResult.status === "sold"
+                ? "This demo item has been resold."
+                : "This item has a demo shipping request."}
+            </p>
+          )}
+        </>
+      )}
+      {panel === "redeem" && activeResult && (
+        <>
+          <span className="eyebrow">DEMO ACTION</span>
+          <h2>Redeem this pull?</h2>
+          <p>
+            <strong>{activeResult.prize.name}</strong>
+          </p>
+          <p className="panel-note">
+            Redeem unlocks the shipping queue. Shipping opens 60 days after
+            launch; you can queue now.
+          </p>
+          <button
+            className="primary-button full-width"
+            onClick={() => {
+              act({ type: "redeem", itemId: activeResult.id });
+              openPanel(null);
+              notify("Redeemed in your demo collection.");
+            }}
+          >
+            Redeem <Check size={17} />
+          </button>
+        </>
+      )}
+      {panel === "reset" && (
+        <>
+          <span className="panel-icon">
+            <RotateCcw size={30} />
+          </span>
+          <span className="eyebrow">A FRESH START</span>
+          <h2>Another round?</h2>
+          <p>
+            Reset this browser’s demo inventory and history, and restore your
+            balance to 250 play credits.
+          </p>
+          <button
+            className="primary-button full-width"
+            onClick={() => {
+              if (timer.current) clearTimeout(timer.current);
+              pullLock.current = false;
+              setRunning(false);
+              act({ type: "reset" });
+              openPanel(null);
+              setResultId(null);
+              notify("Fresh start. 250 demo credits are ready.");
+            }}
+          >
+            Reset demo session <RotateCcw size={17} />
+          </button>
+          <button
+            className="text-button full-width cancel-button"
+            onClick={() => openPanel(null)}
+          >
+            Keep my session
+          </button>
+        </>
+      )}
+    </InlinePanel>
+  );
   return (
     <div
-      className={`app-shell ${view === "arcade" ? "arcade-view" : "inventory-view"}`}
+      className={`app-shell arcade-view ${view === "inventory" ? "inventory-view" : ""} ${panel ? "has-inline-panel" : ""}`}
     >
       <a className="skip-link" href="#main">
         Skip to arcade
@@ -298,7 +590,10 @@ export default function Arcade() {
         <button
           className="brand"
           onClick={() => {
-            if (!running) setView("arcade");
+            if (!running) {
+              setView("arcade");
+              setPanel(null);
+            }
           }}
           aria-label="Gacha Arcade home"
         >
@@ -319,7 +614,10 @@ export default function Arcade() {
           <button
             disabled={running}
             className={view === "arcade" ? "nav-link active" : "nav-link"}
-            onClick={() => setView("arcade")}
+            onClick={() => {
+              setView("arcade");
+              setPanel(null);
+            }}
           >
             <Gamepad2 size={17} />
             Arcade
@@ -332,12 +630,20 @@ export default function Arcade() {
             <Package size={17} />
             My inventory<span className="nav-count">{activeHeld.length}</span>
           </button>
-          <button className="nav-link help-nav" onClick={() => setModal("how")}>
+          <button
+            disabled={running}
+            className="nav-link help-nav"
+            onClick={() => openPanel("how")}
+          >
             How to play
             <ArrowUpRight size={14} />
           </button>
         </nav>
-        <button className="wallet-button" onClick={() => setModal("wallet")}>
+        <button
+          disabled={running}
+          className="wallet-button"
+          onClick={() => openPanel("wallet")}
+        >
           <Wallet size={17} />
           <span>Demo wallet</span>
           <span className="wallet-amount">
@@ -358,7 +664,8 @@ export default function Arcade() {
           </span>
         </span>
         <button
-          onClick={() => setModal("reset")}
+          disabled={running}
+          onClick={() => openPanel("reset")}
           aria-label="Reset demo session"
         >
           <RotateCcw size={13} />
@@ -396,6 +703,30 @@ export default function Arcade() {
             <span>BETA EDITION</span>
           </div>
         </div>
+
+        {(notice ||
+          storageWarning ||
+          (legacySessionNotice && showLegacySessionNotice)) && (
+          <div className="arcade-feedback" role="status" aria-live="polite">
+            <span>
+              {storageWarning
+                ? "Storage unavailable. This session may not survive a refresh."
+                : notice ||
+                  "Your previous demo is saved separately. This session uses sample stock."}
+            </span>
+            {!storageWarning && (
+              <button
+                aria-label="Dismiss update"
+                onClick={() => {
+                  setNotice("");
+                  setShowLegacySessionNotice(false);
+                }}
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        )}
 
         {view === "arcade" ? (
           <>
@@ -529,135 +860,147 @@ export default function Arcade() {
               </section>
 
               <aside
-                className={`machine-details ${selected}`}
+                className={`machine-details ${selected} ${panel ? "details-workspace" : ""}`}
                 style={{ "--tier-color": accents[selected] } as CSSProperties}
-                aria-label={`${machine.name} machine details`}
+                aria-label={
+                  panel ? "Arcade details" : `${machine.name} machine details`
+                }
               >
-                <div className="details-top">
-                  <span className="tier-badge">
-                    <span />
-                    {machine.name.toUpperCase()}
-                  </span>
-                  <span className="mono muted">
-                    MACHINE 0
-                    {machines.findIndex((item) => item.id === selected) + 1}
-                  </span>
-                </div>
-                <h2>
-                  {machine.name} discoveries<span>Start your next story.</span>
-                </h2>
-                <p className="details-description">{machine.description}</p>
-                <div className="machine-specs">
-                  <div>
-                    <span>Inside this machine</span>
-                    <strong>
-                      {machine.prizes.length} Lorcana sets · Sample stock
-                    </strong>
-                  </div>
-                  <div>
-                    <span>Prize selection</span>
-                    <strong>
-                      {machine.prizes.length} sets · current demo odds
-                      <HelpCircle size={13} />
-                    </strong>
-                  </div>
-                </div>
-                <div className="price-block">
-                  <div>
-                    <span className="eyebrow">ONE DEMO PULL</span>
-                    <div className="price">
-                      {machine.price}
-                      <span>credits</span>
-                    </div>
-                  </div>
-                  <span className="play-credit-icon">
-                    <Coins size={27} />
-                  </span>
-                </div>
-                <button
-                  className="pull-button"
-                  onClick={
-                    running
-                      ? finishPull
-                      : activeState.balance < machine.price ||
-                          selectedMachineStock < 1
-                        ? () => setModal("reset")
-                        : pull
-                  }
-                  disabled={!ready}
-                >
-                  {running ? (
-                    <>
-                      Reveal prize <ArrowRight size={19} />
-                    </>
-                  ) : activeState.balance < machine.price ||
-                    selectedMachineStock < 1 ? (
-                    <>
-                      {selectedMachineStock < 1
-                        ? "Reset demo stock"
-                        : "Reset demo"}{" "}
-                      <RotateCcw size={18} />
-                    </>
-                  ) : (
-                    <>
-                      <Gamepad2 size={20} />
-                      PULL {machine.name.toUpperCase()}
-                      <ArrowRight size={19} />
-                    </>
-                  )}
-                </button>
-                {running ? (
-                  <button
-                    className="text-button skip-reveal"
-                    onClick={finishPull}
-                  >
-                    Skip animation <ChevronRight size={14} />
-                  </button>
-                ) : activeState.balance < machine.price ||
-                  selectedMachineStock < 1 ? (
-                  <button
-                    className="text-button skip-reveal"
-                    onClick={() => setModal("reset")}
-                  >
-                    {selectedMachineStock < 1
-                      ? "Reset demo stock"
-                      : "Reset your demo balance"}{" "}
-                    <RotateCcw size={14} />
-                  </button>
+                {panel ? (
+                  panelContent
                 ) : (
-                  <p className="pull-note">
-                    <ShieldCheck size={13} />
-                    One pull awards one sealed Lorcana booster pack.
-                  </p>
+                  <>
+                    <div className="details-top">
+                      <span className="tier-badge">
+                        <span />
+                        {machine.name.toUpperCase()}
+                      </span>
+                      <span className="mono muted">
+                        MACHINE 0
+                        {machines.findIndex((item) => item.id === selected) + 1}
+                      </span>
+                    </div>
+                    <h2>
+                      {machine.name} discoveries
+                      <span>Start your next story.</span>
+                    </h2>
+                    <p className="details-description">{machine.description}</p>
+                    <div className="machine-specs">
+                      <div>
+                        <span>Inside this machine</span>
+                        <strong>
+                          {machine.prizes.length} Lorcana sets · Sample stock
+                        </strong>
+                      </div>
+                      <div>
+                        <span>Prize selection</span>
+                        <strong>
+                          {machine.prizes.length} sets · current demo odds
+                          <HelpCircle size={13} />
+                        </strong>
+                      </div>
+                    </div>
+                    <div className="price-block">
+                      <div>
+                        <span className="eyebrow">ONE DEMO PULL</span>
+                        <div className="price">
+                          {machine.price}
+                          <span>credits</span>
+                        </div>
+                      </div>
+                      <span className="play-credit-icon">
+                        <Coins size={27} />
+                      </span>
+                    </div>
+                    <button
+                      className="pull-button"
+                      onClick={
+                        running
+                          ? finishPull
+                          : activeState.balance < machine.price ||
+                              selectedMachineStock < 1
+                            ? () => openPanel("reset")
+                            : pull
+                      }
+                      disabled={!ready}
+                    >
+                      {running ? (
+                        <>
+                          Reveal prize <ArrowRight size={19} />
+                        </>
+                      ) : activeState.balance < machine.price ||
+                        selectedMachineStock < 1 ? (
+                        <>
+                          {selectedMachineStock < 1
+                            ? "Reset demo stock"
+                            : "Reset demo"}{" "}
+                          <RotateCcw size={18} />
+                        </>
+                      ) : (
+                        <>
+                          <Gamepad2 size={20} />
+                          PULL {machine.name.toUpperCase()}
+                          <ArrowRight size={19} />
+                        </>
+                      )}
+                    </button>
+                    {running ? (
+                      <button
+                        className="text-button skip-reveal"
+                        onClick={finishPull}
+                      >
+                        Skip animation <ChevronRight size={14} />
+                      </button>
+                    ) : activeState.balance < machine.price ||
+                      selectedMachineStock < 1 ? (
+                      <button
+                        className="text-button skip-reveal"
+                        onClick={() => openPanel("reset")}
+                      >
+                        {selectedMachineStock < 1
+                          ? "Reset demo stock"
+                          : "Reset your demo balance"}{" "}
+                        <RotateCcw size={14} />
+                      </button>
+                    ) : (
+                      <p className="pull-note">
+                        <ShieldCheck size={13} />
+                        One pull awards one sealed Lorcana booster pack.
+                      </p>
+                    )}
+                    <div className="outcome-options">
+                      <span>
+                        <RotateCcw size={15} />
+                        Resell
+                      </span>
+                      <span>
+                        <Package size={15} />
+                        Keep
+                      </span>
+                      <span>
+                        <Truck size={15} />
+                        Ship
+                      </span>
+                    </div>
+                    <button
+                      className="pool-button"
+                      disabled={running}
+                      onClick={() => {
+                        setShowAllStock(false);
+                        openPanel("pool");
+                      }}
+                    >
+                      <Package size={15} /> View sample stock ·{" "}
+                      {machine.prizes.length} sets
+                      <ChevronRight size={15} />
+                    </button>
+                  </>
                 )}
-                <div className="outcome-options">
-                  <span>
-                    <RotateCcw size={15} />
-                    Resell
-                  </span>
-                  <span>
-                    <Package size={15} />
-                    Keep
-                  </span>
-                  <span>
-                    <Truck size={15} />
-                    Ship
-                  </span>
-                </div>
-                <button
-                  className="pool-button"
-                  onClick={() => {
-                    setShowAllStock(false);
-                    setModal("pool");
-                  }}
-                >
-                  <Package size={15} /> View sample stock ·{" "}
-                  {machine.prizes.length} sets
-                  <ChevronRight size={15} />
-                </button>
               </aside>
             </div>
           </>
+        ) : panel ? (
+          <div className="collection-workspace">{panelContent}</div>
         ) : (
           <PlayerInventory
             state={activeState}
@@ -675,367 +1018,12 @@ export default function Arcade() {
           <div>
             <span>Made for collectors.</span>
             <span className="footer-dot">·</span>
-            <button onClick={() => setModal("how")}>How it works</button>
+            <button onClick={() => openPanel("how")}>How it works</button>
             <a href="/admin">Admin</a>
             <span className="version">{APP_VERSION} beta</span>
           </div>
         </footer>
       </main>
-
-      {storageWarning && (
-        <div className="storage-warning" role="status">
-          Browser storage is unavailable. This demo session may not survive a
-          refresh.
-        </div>
-      )}
-      {legacySessionNotice && showLegacySessionNotice && (
-        <div className="storage-warning legacy-session-notice" role="status">
-          <span>
-            Your previous demo is saved separately. This is a fresh sample-stock
-            simulation.
-          </span>
-          <button
-            className="icon-button"
-            aria-label="Dismiss session notice"
-            onClick={() => setShowLegacySessionNotice(false)}
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
-      <div
-        className={`toast ${notice ? "visible" : ""}`}
-        role="status"
-        aria-live="polite"
-      >
-        {notice && (
-          <>
-            <Check size={17} />
-            {notice}
-          </>
-        )}
-      </div>
-
-      <Dialog
-        open={modal !== null}
-        onClose={() => setModal(null)}
-        title={
-          modal === "result"
-            ? "Your demo prize"
-            : modal === "redeem"
-              ? "Redeem demo prize"
-              : modal === "reset"
-                ? "Reset demo"
-                : modal === "wallet"
-                  ? "Demo wallet"
-                  : modal === "pool"
-                    ? `${machine.name} sample stock`
-                    : "How to play"
-        }
-      >
-        {modal === "pool" && (
-          <>
-            <span className="eyebrow">
-              SAMPLE STOCK · ILLUSTRATIVE GAME CONFIG
-            </span>
-            <h2>
-              {showAllStock
-                ? "All sample stock"
-                : `${machine.name} machine pool`}
-            </h2>
-            <p className="dialog-note pool-stock-intro">
-              100 fictional packs per set. Demo quantities do not reflect
-              warehouse stock.
-            </p>
-            <div className="pool-summary">
-              <span>
-                {showAllStock ? totalRemainingStock : selectedMachineStock}{" "}
-                sample packs remaining
-              </span>
-              <span>fictional game config</span>
-            </div>
-            <button
-              className="text-button full-width pool-toggle"
-              onClick={() => setShowAllStock((current) => !current)}
-            >
-              {showAllStock
-                ? `View ${machine.name} pool`
-                : `View all sample stock · ${stockCatalog.length} sets`}
-              <ChevronRight size={15} />
-            </button>
-            <div className="pool-dialog-list">
-              {(showAllStock ? stockCatalog : machine.prizes).map(
-                (prize, index) => {
-                  const prizeMachine = prize.machineId ?? selected;
-                  const remaining = remainingStock(activeState, prize.id);
-                  const machineTotal = machineStock(activeState, prizeMachine);
-                  return (
-                    <article
-                      className="pool-dialog-item"
-                      key={prize.id}
-                      style={
-                        {
-                          "--tier-color": accents[prizeMachine],
-                        } as CSSProperties
-                      }
-                    >
-                      {!showAllStock && (
-                        <span className="prize-number">0{index + 1}</span>
-                      )}
-                      <PrizeSymbol prize={prize} />
-                      <div>
-                        <span className="prize-type">
-                          <span
-                            className={`machine-mini-badge ${prizeMachine}`}
-                          >
-                            {prizeMachine}
-                          </span>{" "}
-                          SEALED PACK
-                        </span>
-                        <h3>{prize.name}</h3>
-                        <p>{prize.detail}</p>
-                        <strong>
-                          {credits(prize.value)} CR <span>demo value</span>
-                        </strong>
-                        <p className="stock-line">
-                          Sample stock: {remaining} / {prize.startingQuantity}{" "}
-                          packs
-                          {!showAllStock && machineTotal > 0
-                            ? ` · ${((remaining / machineTotal) * 100).toFixed(1)}% current odds`
-                            : ""}
-                        </p>
-                      </div>
-                    </article>
-                  );
-                },
-              )}
-            </div>
-            <p className="dialog-note">
-              One sealed pack per pull. Each remaining pack has the same chance
-              in its machine; the shown percentages are rounded. Tiers and
-              credit values are provisional. Demo resale returns the pack to its
-              sample pool.
-            </p>
-
-            <button
-              className="primary-button full-width"
-              onClick={() => setModal(null)}
-            >
-              Back to {machine.name} <ArrowRight size={17} />
-            </button>
-          </>
-        )}
-        {modal === "how" && (
-          <>
-            <span className="eyebrow">WELCOME TO GACHA ARCADE</span>
-            <h2>
-              One pull.
-              <br />
-              Three possibilities.
-            </h2>
-            <div className="how-steps">
-              <div>
-                <span>01</span>
-                <section>
-                  <h3>Pick your machine</h3>
-                  <p>
-                    Common, Rare, or Epic. Each has its own sample pool and demo
-                    price.
-                  </p>
-                </section>
-              </div>
-              <div>
-                <span>02</span>
-                <section>
-                  <h3>Find your next collectible</h3>
-                  <p>
-                    Spend play credits and reveal one sealed Lorcana booster
-                    pack. You start with 250 credits.
-                  </p>
-                </section>
-              </div>
-              <div>
-                <span>03</span>
-                <section>
-                  <h3>Make it yours</h3>
-                  <p>
-                    Keep it in your demo inventory, resell for play credits, or
-                    preview shipping.
-                  </p>
-                </section>
-              </div>
-            </div>
-            <p className="dialog-note">
-              This local, per-browser demo uses fictional sample stock only. No
-              physical inventory is reserved. No purchases, wallet signatures,
-              payouts, or shipments occur. The demo resale rate is 80% of demo
-              item value.
-            </p>
-            <button
-              className="primary-button full-width"
-              onClick={() => setModal(null)}
-            >
-              Let’s play <ArrowRight size={17} />
-            </button>
-          </>
-        )}
-        {modal === "wallet" && (
-          <>
-            <span className="dialog-icon">
-              <Wallet size={30} />
-            </span>
-            <span className="eyebrow">FREE PLAY WALLET</span>
-            <h2>A little pocket magic.</h2>
-            <div className="wallet-total">
-              {credits(activeState.balance)}
-              <span>demo credits</span>
-            </div>
-            <p>
-              Your demo credits are saved in this browser. They have no monetary
-              value and cannot be withdrawn.
-            </p>
-            <div className="dialog-note">
-              Crypto payments will be connected after the network, token, and
-              machine prices are confirmed.
-            </div>
-            <a className="text-button" href="/admin">
-              Demo admin
-            </a>
-            <button
-              className="primary-button full-width"
-              onClick={() => setModal(null)}
-            >
-              Back to the arcade <ArrowRight size={17} />
-            </button>
-          </>
-        )}
-        {modal === "result" && activeResult && (
-          <>
-            <span className="eyebrow">
-              {activeResult.status === "held"
-                ? "A NEW FIND FOR YOUR COLLECTION"
-                : "YOUR DEMO PRIZE"}
-            </span>
-            <h2>
-              {activeResult.status === "held" ? "New pull." : "Demo record."}
-            </h2>
-            <div
-              className="result-prize"
-              style={
-                {
-                  "--tier-color": accents[activeResult.machineId],
-                } as CSSProperties
-              }
-            >
-              <PrizeSymbol prize={activeResult.prize} />
-              <span className="tier-badge">
-                {activeResult.machineId.toUpperCase()} MACHINE
-              </span>
-              <h3>{activeResult.prize.name}</h3>
-              <p>{activeResult.prize.detail}</p>
-              <strong>
-                {credits(activeResult.prize.value)} CR <span>sample value</span>
-              </strong>
-            </div>
-            {activeResult.status === "held" ? (
-              <>
-                <button
-                  className="primary-button full-width"
-                  onClick={() => {
-                    setModal(null);
-                    notify("Kept in your demo inventory.");
-                  }}
-                >
-                  <Package size={18} />
-                  Keep in inventory
-                  <Check size={18} />
-                </button>
-                <div className="result-actions">
-                  <button onClick={() => sell(activeResult)}>
-                    <RotateCcw size={17} />
-                    <span>
-                      Resell for {credits(resaleValue(activeResult.prize))} CR
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setModal("redeem");
-                    }}
-                  >
-                    <Truck size={17} />
-                    <span>Redeem</span>
-                  </button>
-                </div>
-                <p className="dialog-note">
-                  Sample value only. Your pull is already saved.
-                </p>
-              </>
-            ) : (
-              <p className="dialog-note">
-                {activeResult.status === "sold"
-                  ? "This demo item has been resold."
-                  : "This item has a demo shipping request."}
-              </p>
-            )}
-          </>
-        )}
-        {modal === "redeem" && activeResult && (
-          <>
-            <span className="eyebrow">DEMO ACTION</span>
-            <h2>Redeem this pull?</h2>
-            <p>
-              <strong>{activeResult.prize.name}</strong>
-            </p>
-            <p className="dialog-note">
-              Redeem unlocks the shipping queue. Shipping opens 60 days after
-              launch; you can queue now.
-            </p>
-            <button
-              className="primary-button full-width"
-              onClick={() => {
-                act({ type: "redeem", itemId: activeResult.id });
-                setModal(null);
-                notify("Redeemed in your demo collection.");
-              }}
-            >
-              Redeem <Check size={17} />
-            </button>
-          </>
-        )}
-        {modal === "reset" && (
-          <>
-            <span className="dialog-icon">
-              <RotateCcw size={30} />
-            </span>
-            <span className="eyebrow">A FRESH START</span>
-            <h2>Another round?</h2>
-            <p>
-              Reset this browser’s demo inventory and history, and restore your
-              balance to 250 play credits.
-            </p>
-            <button
-              className="primary-button full-width"
-              onClick={() => {
-                if (timer.current) clearTimeout(timer.current);
-                pullLock.current = false;
-                setRunning(false);
-                act({ type: "reset" });
-                setModal(null);
-                setResultId(null);
-                notify("Fresh start. 250 demo credits are ready.");
-              }}
-            >
-              Reset demo session <RotateCcw size={17} />
-            </button>
-            <button
-              className="text-button full-width cancel-button"
-              onClick={() => setModal(null)}
-            >
-              Keep my session
-            </button>
-          </>
-        )}
-      </Dialog>
     </div>
   );
 }

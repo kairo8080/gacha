@@ -5,6 +5,7 @@ import "@fontsource/press-start-2p/400.css";
 import "./globals.css";
 import "./pixel-theme.css";
 import "./collection.css";
+import "./arcade-workspace.css";
 
 export const metadata: Metadata = {
   title: "Gacha Arcade — Lorcana Collectibles",

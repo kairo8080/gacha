@@ -1,0 +1,313 @@
+/* Ticket 016: contextual actions live inside the game screen. */
+.app-shell.arcade-view .site-header,
+.app-shell.arcade-view .main-content {
+  padding-inline: 24px;
+}
+.arcade-view .page-heading {
+  padding-block: 8px;
+}
+.arcade-view.has-inline-panel .arcade-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 40%);
+}
+.arcade-view .machine-details.details-workspace {
+  display: flex;
+  padding: 0;
+  overflow: hidden;
+}
+.inline-panel {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.inline-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--line);
+  background: #17253d;
+}
+.arcade-view .inline-panel-header h2 {
+  font: 20px/1.1 var(--font-pixel-body);
+  text-transform: uppercase;
+  color: var(--lime);
+  margin: 0;
+}
+.inline-panel-header h2:focus {
+  outline: none;
+}
+.inline-panel-header .text-button {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  gap: 6px;
+  padding: 0 4px;
+  font-size: 18px;
+}
+.inline-panel-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #607d9e #152238;
+  padding: 14px;
+}
+.inline-panel-body > .eyebrow {
+  color: var(--lime);
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+.arcade-view .inline-panel-body > h2 {
+  margin: 6px 0 12px;
+  font: 12px/1.7 var(--font-pixel-title);
+  letter-spacing: 0;
+}
+.inline-panel-body > p {
+  margin: 10px 0;
+  font-size: 19px;
+  color: var(--muted);
+  line-height: 1.2;
+}
+.inline-panel-body .panel-note {
+  padding: 8px 10px;
+  margin: 10px 0;
+  background: #17253d;
+  border-left: 3px solid #587397;
+  color: #bdcee5;
+  font-size: 17px;
+  line-height: 1.2;
+}
+.inline-panel-body .panel-icon {
+  display: inline-flex;
+  color: var(--lime);
+  float: right;
+  padding: 4px;
+}
+.inline-panel-body .primary-button {
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 19px;
+}
+.inline-panel-body .text-button {
+  font-size: 18px;
+}
+.pool-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pool-meta > strong {
+  color: var(--lime);
+  font-size: 28px;
+  line-height: 1;
+}
+.pool-meta > strong > span {
+  color: var(--muted);
+  font-size: 14px;
+}
+.pool-meta .text-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+}
+.inline-panel-body .pool-caption {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.15;
+  margin: 6px 0 10px;
+}
+.pool-stock-list {
+  display: grid;
+  gap: 4px;
+}
+.pool-stock-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid #526788;
+  border-left: 3px solid var(--tier-color);
+  background: #192842;
+}
+.pool-stock-row h3 {
+  font-size: 21px;
+  line-height: 1;
+  margin: 0 0 2px;
+}
+.pool-stock-row span {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  display: block;
+}
+.pool-stock-row > strong {
+  color: var(--tier-color);
+  font-size: 25px;
+  white-space: nowrap;
+}
+.pool-stock-row small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.inline-panel-body .how-steps {
+  gap: 12px;
+  margin: 14px 0;
+}
+.inline-panel-body .how-steps > div {
+  gap: 12px;
+}
+.inline-panel-body .how-steps h3 {
+  font-size: 23px;
+  margin: 0 0 2px;
+}
+.inline-panel-body .how-steps p {
+  font-size: 18px;
+}
+.inline-panel-body .wallet-total {
+  font-size: 60px;
+  margin: 12px 0;
+}
+.inline-panel-body .wallet-total span {
+  margin: 0;
+  font-size: 19px;
+}
+.inline-panel-body .result-prize {
+  padding: 12px;
+  margin: 8px 0 12px;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 14px;
+  text-align: left;
+  align-items: center;
+}
+.inline-panel-body .result-prize > .prize-symbol {
+  grid-row: 1 / 5;
+  width: 64px;
+  min-width: 0;
+  height: 92px;
+  margin: 0;
+}
+.inline-panel-body .result-prize .prize-set-badge {
+  display: none;
+}
+.inline-panel-body .result-prize > .tier-badge {
+  font-size: 13px;
+  justify-self: start;
+}
+.inline-panel-body .result-prize h3 {
+  font-size: 27px;
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+.inline-panel-body .result-prize p {
+  font-size: 16px;
+  margin: 0;
+}
+.inline-panel-body .result-prize > strong {
+  font-size: 27px;
+}
+.inline-panel-body .result-prize > strong > span {
+  font-size: 15px;
+}
+.inline-panel-body .result-actions {
+  margin-top: 8px;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+.inline-panel-body .result-actions > button {
+  min-height: 44px;
+  font-size: 18px;
+  flex-direction: row;
+  gap: 6px;
+  padding: 6px;
+}
+.inline-panel-body .cancel-button {
+  margin-top: 10px;
+}
+.arcade-feedback {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 4px 10px;
+  border-left: 3px solid var(--lime);
+  background: #1c3938;
+  color: #d4f2df;
+  font-size: 18px;
+  line-height: 1.2;
+}
+.arcade-feedback button {
+  min-width: 28px;
+  min-height: 28px;
+  display: grid;
+  place-items: center;
+}
+.collection-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  border: 3px solid #526788;
+  background: var(--surface);
+}
+.collection-workspace .inline-panel-body {
+  width: 100%;
+  max-width: 680px;
+  margin-inline: auto;
+}
+
+@media (max-width: 760px) {
+  .app-shell.arcade-view .site-header,
+  .app-shell.arcade-view .main-content {
+    padding-inline: 12px;
+  }
+  .arcade-view.has-inline-panel .arcade-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .arcade-view.has-inline-panel .arcade-panel {
+    display: none;
+  }
+  .arcade-view.has-inline-panel .machine-details.details-workspace {
+    min-height: 0;
+  }
+  .inline-panel-body {
+    padding: 12px;
+  }
+  .arcade-feedback {
+    font-size: 16px;
+  }
+  .inventory-view {
+    height: auto;
+    min-height: 100dvh;
+  }
+  .inventory-view .player-collection {
+    min-height: 0;
+  }
+  .inventory-view.has-inline-panel {
+    height: 100dvh;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .arcade-view.has-inline-panel .arcade-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .arcade-view.has-inline-panel .arcade-panel {
+    display: none;
+  }
+  .arcade-view.has-inline-panel .machine-details.details-workspace {
+    min-height: 300px;
+  }
+  .inline-panel-body {
+    overflow: visible;
+  }
+}

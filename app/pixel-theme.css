@@ -279,15 +279,13 @@ h1 > span {
 .arcade-scene:after {
   background: none;
 }
-.scene-machine:hover {
-  transform: translateY(-4px);
-}
 .scene-machine:not(.selected) .machine-sprite {
   filter: brightness(0.9);
 }
 .scene-machine:hover .machine-sprite,
+.scene-machine:focus-visible .machine-sprite,
 .scene-machine.selected .machine-sprite {
-  filter: drop-shadow(3px 3px #111a2c);
+  filter: brightness(1.12);
 }
 .scene-machine-label {
   font-size: 8px;

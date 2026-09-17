@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.7 — 2026-09-17
+
+- Kept machines stationary when selected and limited the selected state to brightness highlighting, including hover and keyboard focus states; machine position, sizing, and character rules are unchanged.
+- Verification passed: typecheck, all 25 tests, and production build. Browser checks confirmed Rare click and ArrowRight keyboard selection of Epic preserved identical machine top coordinates before and after selection; computed transforms were none, and hover, selected, and focus brightness states were active.
+
 ## v0.1.6 — 2026-09-17
 
 - Sized the character responsively to two-thirds of the machine’s visible artwork height, accounting for transparent sprite margins across scene and inline-panel layouts; the natural idle bob is unchanged.

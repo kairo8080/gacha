@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Coins,
   Gamepad2,
-  HelpCircle,
   Package,
   RotateCcw,
   ShieldCheck,
@@ -91,7 +90,12 @@ function ClawSequence({ id }: { id: MachineId }) {
     return () => clearInterval(interval);
   }, []);
   return (
-    <div className="claw-closeup" role="status">
+    <div
+      className="claw-closeup"
+      role="status"
+      data-ui="A24"
+      data-ui-name="Claw animation"
+    >
       <span className="eyebrow">A LITTLE ARCADE MAGIC…</span>
       <div
         className="claw-sprite"
@@ -124,6 +128,8 @@ function InlinePanel({
   return (
     <section
       className="inline-panel"
+      data-ui="A21"
+      data-ui-name="Inline detail panel"
       aria-label={title}
       onKeyDown={(event) => {
         if (event.key === "Escape") {
@@ -586,9 +592,11 @@ export default function Arcade() {
       <a className="skip-link" href="#main">
         Skip to arcade
       </a>
-      <header className="site-header">
+      <header className="site-header" data-ui="A01" data-ui-name="Header">
         <button
           className="brand"
+          data-ui="A02"
+          data-ui-name="Brand and version"
           onClick={() => {
             if (!running) {
               setView("arcade");
@@ -610,104 +618,98 @@ export default function Arcade() {
             {APP_VERSION}
           </span>
         </button>
-        <nav aria-label="Main navigation">
+        <div className="header-center">
+          <nav
+            aria-label="Main navigation"
+            data-ui="A03"
+            data-ui-name="Navigation"
+          >
+            <button
+              disabled={running}
+              className={view === "arcade" ? "nav-link active" : "nav-link"}
+              onClick={() => {
+                setView("arcade");
+                setPanel(null);
+              }}
+            >
+              <Gamepad2 size={17} />
+              Arcade
+            </button>
+            <button
+              disabled={running}
+              className={view === "inventory" ? "nav-link active" : "nav-link"}
+              onClick={openInventory}
+            >
+              <Package size={17} />
+              My inventory<span className="nav-count">{activeHeld.length}</span>
+            </button>
+            <button
+              disabled={running}
+              className="nav-link help-nav"
+              onClick={() => openPanel("how")}
+            >
+              How to play
+              <ArrowUpRight size={14} />
+            </button>
+          </nav>
+          <small
+            className="header-demo-note"
+            data-ui="A05"
+            data-ui-name="Demo note"
+          >
+            Demo · Sample prizes · No real payments
+          </small>
+        </div>
+        <div className="header-actions">
           <button
             disabled={running}
-            className={view === "arcade" ? "nav-link active" : "nav-link"}
-            onClick={() => {
-              setView("arcade");
-              setPanel(null);
-            }}
+            className="wallet-button"
+            data-ui="A04"
+            data-ui-name="Demo wallet"
+            aria-label={`Demo wallet ${credits(activeState.balance)} CR`}
+            onClick={() => openPanel("wallet")}
           >
-            <Gamepad2 size={17} />
-            Arcade
+            <Wallet size={17} />
+            <span>Demo wallet</span>
+            <span className="wallet-amount">
+              {credits(activeState.balance)}
+              <span className="tiny"> CR</span>
+            </span>
           </button>
           <button
+            className="header-reset"
             disabled={running}
-            className={view === "inventory" ? "nav-link active" : "nav-link"}
-            onClick={openInventory}
+            onClick={() => openPanel("reset")}
+            aria-label="Reset demo session"
+            data-ui="A06"
+            data-ui-name="Reset session"
           >
-            <Package size={17} />
-            My inventory<span className="nav-count">{activeHeld.length}</span>
+            <RotateCcw size={16} />
+            <span>Reset</span>
           </button>
-          <button
-            disabled={running}
-            className="nav-link help-nav"
-            onClick={() => openPanel("how")}
-          >
-            How to play
-            <ArrowUpRight size={14} />
-          </button>
-        </nav>
-        <button
-          disabled={running}
-          className="wallet-button"
-          onClick={() => openPanel("wallet")}
-        >
-          <Wallet size={17} />
-          <span>Demo wallet</span>
-          <span className="wallet-amount">
-            {credits(activeState.balance)}
-            <span className="tiny"> CR</span>
-          </span>
-        </button>
+        </div>
       </header>
 
-      <div className="demo-banner">
-        <span>
-          <span className="demo-label">FREE PLAY</span>
-          <span className="demo-copy">
-            This is a demo. Sample prizes, play credits, zero real transactions.
-          </span>
-          <span className="demo-copy-compact">
-            DEMO · Play credits. Sample prizes.
-          </span>
-        </span>
-        <button
-          disabled={running}
-          onClick={() => openPanel("reset")}
-          aria-label="Reset demo session"
-        >
-          <RotateCcw size={13} />
-          <span>Reset demo</span>
-        </button>
-      </div>
-
-      <main id="main" className="main-content">
-        <div className="page-heading">
-          <div>
-            <div className="eyebrow">
-              <span className="pixel-square" />
-              THE LORCANA ROOM <span className="eyebrow-divider">/</span>{" "}
-              {view === "arcade" ? "SELECT A MACHINE" : "YOUR COLLECTION."}
-            </div>
-            <h1>
-              {view === "arcade" ? (
-                <>
-                  A little luck. <span>A great find.</span>
-                </>
-              ) : (
-                <>
-                  Your pulls.<span> Your next move.</span>
-                </>
-              )}
-            </h1>
-            <p>
-              {view === "arcade"
-                ? "Three machines. A world of collectibles. Which one calls to you?"
-                : "Keep, resell, redeem, or queue a demo shipment."}
-            </p>
-          </div>
-          <div className="edition">
-            <span>{APP_VERSION}</span>
-            <span>BETA EDITION</span>
-          </div>
-        </div>
+      <main
+        id="main"
+        className="main-content"
+        data-ui="A07"
+        data-ui-name="Main workspace"
+      >
+        <h1 className="sr-only">
+          {view === "arcade" ? "Gacha Arcade" : "Your collection"}
+        </h1>
 
         {(notice ||
           storageWarning ||
           (legacySessionNotice && showLegacySessionNotice)) && (
-          <div className="arcade-feedback" role="status" aria-live="polite">
+          <div
+            className="arcade-feedback"
+            data-ui="A22"
+            data-ui-name="Inline feedback"
+            role="status"
+            aria-live="polite"
+          >
             <span>
               {storageWarning
                 ? "Storage unavailable. This session may not survive a refresh."
@@ -731,8 +733,17 @@ export default function Arcade() {
         {view === "arcade" ? (
           <>
             <div className="arcade-layout">
-              <section className="arcade-panel" aria-label="Machine selection">
-                <div className="panel-toolbar">
+              <section
+                className="arcade-panel"
+                data-ui="A08"
+                data-ui-name="Arcade cabinet"
+                aria-label="Machine selection"
+              >
+                <div
+                  className="panel-toolbar"
+                  data-ui="A09"
+                  data-ui-name="Scene toolbar"
+                >
                   <span>
                     <Gamepad2 size={16} /> THE ARCADE
                   </span>
@@ -756,8 +767,16 @@ export default function Arcade() {
                     </button>
                   </div>
                 </div>
-                <div className={`arcade-scene ${running ? "is-running" : ""}`}>
-                  <div className="scene-sign">
+                <div
+                  className={`arcade-scene ${running ? "is-running" : ""}`}
+                  data-ui="A10"
+                  data-ui-name="Store scene"
+                >
+                  <div
+                    className="scene-sign"
+                    data-ui="A11"
+                    data-ui-name="Scene sign"
+                  >
                     <span>✦</span> SELECT YOUR MACHINE <span>✦</span>
                   </div>
                   <div className="rear-machines" aria-hidden="true" />
@@ -765,6 +784,8 @@ export default function Arcade() {
                   <div className="gray-machine gray-right" aria-hidden="true" />
                   <div
                     className="scene-machines"
+                    data-ui="A12"
+                    data-ui-name="Machine group"
                     role="group"
                     aria-label="Choose machine tier"
                   >
@@ -774,6 +795,8 @@ export default function Arcade() {
                         className={`scene-machine ${item.id === selected ? "selected" : ""} ${item.id}`}
                         disabled={running}
                         aria-label={`Select ${item.name} machine`}
+                        data-ui={`A${13 + index}`}
+                        data-ui-name={`${item.name} machine`}
                         aria-pressed={selected === item.id}
                         onClick={() => select(item.id)}
                         onKeyDown={(event) => {
@@ -813,7 +836,12 @@ export default function Arcade() {
                       </button>
                     ))}
                   </div>
-                  <div className="pixel-character" aria-hidden="true" />
+                  <div
+                    className="pixel-character"
+                    aria-hidden="true"
+                    data-ui="A16"
+                    data-ui-name="Character"
+                  />
                   {running && <ClawSequence id={selected} />}
                   <div className="scene-caption">
                     <span className="scene-caption-key">
@@ -826,6 +854,8 @@ export default function Arcade() {
                 </div>
                 <div
                   className="machine-tabs"
+                  data-ui="A17"
+                  data-ui-name="Machine prices"
                   role="group"
                   aria-label="Machine prices"
                 >
@@ -861,6 +891,8 @@ export default function Arcade() {
 
               <aside
                 className={`machine-details ${selected} ${panel ? "details-workspace" : ""}`}
+                data-ui="A18"
+                data-ui-name="Machine controls"
                 style={{ "--tier-color": accents[selected] } as CSSProperties}
                 aria-label={
                   panel ? "Arcade details" : `${machine.name} machine details`
@@ -880,25 +912,15 @@ export default function Arcade() {
                         {machines.findIndex((item) => item.id === selected) + 1}
                       </span>
                     </div>
-                    <h2>
-                      {machine.name} discoveries
-                      <span>Start your next story.</span>
-                    </h2>
-                    <p className="details-description">{machine.description}</p>
-                    <div className="machine-specs">
-                      <div>
-                        <span>Inside this machine</span>
-                        <strong>
-                          {machine.prizes.length} Lorcana sets · Sample stock
-                        </strong>
-                      </div>
-                      <div>
-                        <span>Prize selection</span>
-                        <strong>
-                          {machine.prizes.length} sets · current demo odds
-                          <HelpCircle size={13} />
-                        </strong>
-                      </div>
+                    <h2>{machine.name} discoveries</h2>
+                    <div className="machine-facts">
+                      <span>
+                        <strong>{machine.prizes.length}</strong> Lorcana sets
+                      </span>
+                      <span>
+                        <strong>{selectedMachineStock}</strong> sample packs
+                        left
+                      </span>
                     </div>
                     <div className="price-block">
                       <div>
@@ -914,6 +936,8 @@ export default function Arcade() {
                     </div>
                     <button
                       className="pull-button"
+                      data-ui="A19"
+                      data-ui-name="Pull / reveal action"
                       onClick={
                         running
                           ? finishPull
@@ -984,6 +1008,8 @@ export default function Arcade() {
                     </div>
                     <button
                       className="pool-button"
+                      data-ui="A20"
+                      data-ui-name="Sample stock action"
                       disabled={running}
                       onClick={() => {
                         setShowAllStock(false);

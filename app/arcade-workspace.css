@@ -311,3 +311,300 @@
     overflow: visible;
   }
 }
+
+/* Ticket 017: a single header leaves the viewport to the playable store. */
+.arcade-view .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.app-shell.arcade-view {
+  grid-template-rows: 72px minmax(0, 1fr);
+}
+.app-shell.arcade-view .site-header {
+  height: 72px;
+  gap: 18px;
+}
+.header-center {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.arcade-view .header-center nav {
+  position: static;
+  height: 36px;
+  margin: 0;
+  gap: 22px;
+}
+.header-demo-note {
+  font: 15px/1.2 var(--font-pixel-body);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.header-reset {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 38px;
+  color: var(--muted);
+  font-size: 17px;
+}
+.header-reset:hover {
+  color: var(--lime);
+}
+.app-shell.arcade-view .main-content {
+  padding-top: 10px;
+  padding-bottom: 12px;
+}
+.arcade-view .arcade-scene {
+  --character-size: 230px;
+  --character-lane: 156px;
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+  container-type: size;
+}
+.arcade-view .scene-sign {
+  top: 24px;
+  left: 50%;
+  right: auto;
+  width: max-content;
+  max-width: calc(100% - 20px);
+  transform: translateX(-50%);
+  font-size: 11px;
+  gap: 14px;
+}
+.arcade-view .scene-machines {
+  left: var(--character-lane);
+  right: 18px;
+  bottom: 56px;
+  gap: 14px;
+}
+.arcade-view .scene-machine {
+  /* Preserve the full 62 × 92 frame below the sign and selection arrow. */
+  flex: 0 1 min(248px, calc((100cqh - 180px) * 0.673913));
+}
+.arcade-view .scene-machine-label {
+  margin-top: 12px;
+}
+.arcade-view .pixel-character {
+  width: var(--character-size);
+  height: var(--character-size);
+  left: -16px;
+  bottom: 29px;
+  pointer-events: none;
+}
+.arcade-view .scene-caption {
+  bottom: 10px;
+  font-size: 15px;
+}
+.arcade-view .claw-closeup {
+  gap: 8px;
+  padding: 12px;
+}
+.arcade-view .claw-sprite {
+  flex: 0 0 auto;
+  width: min(250px, calc((100cqh - 104px) * 1.036364), calc(100cqw - 32px));
+}
+.arcade-view .is-running .scene-sign,
+.arcade-view .is-running .scene-machines,
+.arcade-view .is-running .pixel-character {
+  visibility: hidden;
+}
+.arcade-view .panel-toolbar,
+.arcade-view .machine-tabs {
+  flex-shrink: 0;
+}
+.arcade-view .machine-facts {
+  display: grid;
+  gap: 5px;
+  margin: 16px 0 6px;
+  padding: 10px 0;
+  border-block: 2px solid var(--line);
+  color: var(--muted);
+  font-size: 19px;
+  line-height: 1.2;
+}
+.machine-facts strong {
+  color: var(--text);
+}
+.arcade-view .price-block {
+  flex-shrink: 0;
+  border: 0;
+}
+.arcade-view .pool-button {
+  min-height: 40px;
+  margin-top: 14px;
+  padding: 8px 4px;
+  border-top: 2px solid var(--line);
+}
+.arcade-view .outcome-options {
+  margin-top: 6px;
+}
+
+@media (max-width: 1190px) {
+  .arcade-view .arcade-scene {
+    --character-size: 205px;
+    --character-lane: 136px;
+  }
+  .header-reset span {
+    display: none;
+  }
+  .arcade-view .header-center nav {
+    gap: 16px;
+  }
+}
+@media (min-width: 761px) and (max-width: 960px) {
+  .arcade-view .arcade-scene {
+    --character-size: 175px;
+    --character-lane: 106px;
+  }
+  .arcade-view .scene-machines {
+    gap: 6px;
+    right: 10px;
+  }
+  .arcade-view .scene-sign {
+    font-size: 8px;
+    gap: 6px;
+  }
+  .arcade-view .scene-machine-label {
+    font-size: 6px;
+  }
+  .arcade-view .header-center nav {
+    gap: 10px;
+  }
+  .arcade-view .nav-link {
+    gap: 4px;
+    font-size: 16px;
+  }
+  .header-demo-note {
+    font-size: 13px;
+  }
+}
+@media (max-width: 760px) {
+  .app-shell.arcade-view {
+    grid-template-rows: 108px minmax(0, 1fr);
+  }
+  .app-shell.arcade-view .site-header {
+    height: 108px;
+    align-items: flex-start;
+    padding-top: 8px;
+    gap: 8px;
+  }
+  .header-center {
+    position: absolute;
+    inset: 51px 0 auto;
+    gap: 2px;
+  }
+  .arcade-view .header-center nav {
+    height: 32px;
+    width: 100%;
+    padding: 0 12px;
+    gap: 14px;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+  }
+  .header-actions {
+    gap: 6px;
+    margin-left: auto;
+  }
+  .header-demo-note {
+    font-size: 14px;
+  }
+  .header-reset {
+    min-width: 28px;
+    padding: 0;
+  }
+  .arcade-view .arcade-scene {
+    --character-size: 212.5px;
+    --character-lane: 124px;
+  }
+  .arcade-view .scene-sign {
+    top: 18px;
+    font-size: 8px;
+    gap: 7px;
+  }
+  .arcade-view .scene-machines {
+    right: 8px;
+    gap: 4px;
+    bottom: 42px;
+  }
+  .arcade-view .scene-machine {
+    flex-basis: min(150px, calc((100cqh - 138px) * 0.673913));
+  }
+  .arcade-view .scene-machine-label {
+    font-size: 6px;
+    margin-top: 9px;
+  }
+  .arcade-view .pixel-character {
+    left: -15px;
+    bottom: 22px;
+  }
+  .arcade-view .scene-caption {
+    font-size: 12px;
+    bottom: 6px;
+    gap: 5px;
+  }
+  .arcade-view .machine-facts {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    display: flex;
+    gap: 12px;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 15px;
+  }
+  .arcade-view .machine-details {
+    grid-template-rows: 24px 22px 30px 20px 34px;
+  }
+  .arcade-view .pool-button {
+    grid-row: 5;
+    margin: 0;
+    padding: 0;
+    min-height: 34px;
+    border-top-width: 1px;
+  }
+}
+@media (max-width: 480px) {
+  .arcade-view .arcade-scene {
+    --character-size: 155px;
+    --character-lane: 100px;
+  }
+  .arcade-view .scene-sign {
+    font-size: 7px;
+  }
+  .arcade-view .scene-machine-label {
+    font-size: 5px;
+  }
+  .arcade-view .pixel-character {
+    left: -12px;
+  }
+  .arcade-view .site-header .wallet-button {
+    padding: 6px;
+    gap: 5px;
+  }
+}
+@media (max-height: 560px) and (orientation: landscape) {
+  .app-shell.arcade-view {
+    height: auto;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .arcade-view .arcade-scene {
+    flex-basis: 340px;
+  }
+}

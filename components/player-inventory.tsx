@@ -177,7 +177,12 @@ export function PlayerInventory({
   };
 
   return (
-    <section className="player-collection" aria-label="Your collection">
+    <section
+      className="player-collection"
+      aria-label="Your collection"
+      data-ui="A23"
+      data-ui-name="Player collection"
+    >
       <div className="collection-scoreboard">
         <div>
           <span>PULLS</span>

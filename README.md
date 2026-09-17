@@ -1,4 +1,4 @@
-# Gacha Arcade — v0.1.4
+# Gacha Arcade — v0.1.5
 
 A local, simulated Lorcana collectible arcade using the owner's original pixel art. Built with Next.js, TypeScript, and React; fonts and artwork are served locally.
 
@@ -11,11 +11,13 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. Admin login requires the server-only variables documented in `.env.example`; no wallet or payment credentials are used.
 
-## Current release: v0.1.4
+## Current release: v0.1.5
 
 The visible release label is sourced from the `version` field in `package.json`; the npm lockfile must stay synchronized with it. For each published update, increment the patch version once, make the matching version commit, create the matching Git tag, and publish the matching GitHub release. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
 
-Current iteration: **v0.1.0-16 — Compact dashboards and inline actions**. The next routine update will be **v0.1.5**; the next larger milestone will be **v0.2.0**.
+Current iteration: **v0.1.5 — Public annotated working arcade**. The next routine update will be **v0.1.6**; the next larger milestone will be **v0.2.0**.
+
+The public `/dev` route is an annotated working arcade for review. It is explicitly simulated, marked `noindex`, and contains no admin data or credentials, private stock counts, or real payments. Its browser-local demo wallet and collection follow the main simulation. UI-region labels A01–A24 update across machine, pull, result, and collection states; the label toggle is available below the hero. The extra demo/subheader and introductory copy were removed; the demo note and reset control live in the top header. Scene sizing is responsive, and the character is displayed at 2.5× its prior rendered size while preserving the machine floor and caption fit.
 
 ## Simulation experience (ticket v0.1.0-11)
 
@@ -51,6 +53,8 @@ The production homepage is prerendered. Browser smoke path: select each machine 
 
 v0.1.3 verification: typecheck, 25 tests, and production build passed. Browser checks covered login/logout, stock views, collection history, redemption, queueing, the day-60 unlock, shipping status, tab synchronization, and phone layout. Production runtime checks confirmed unauthorized inventory returns 401 and authorized production access never returns the local warehouse file. Client bundles and deployment traces contain no admin secrets or private inventory files.
 v0.1.4 verification: typecheck, all 25 tests, and production build passed. Browser checks covered inline stock/help/wallet/reset panels, prize reveal, keep/resell, card-local redemption and queue confirmations, cancellation focus, and tab synchronization. The admin overview fits 1280×720 and 1366×768; detail tables scroll inside the screen. Arcade and prize actions fit 390×844 and 376×668 phone viewports. Mobile admin and long collections retain natural scrolling for readable controls. The production build was also checked in-browser.
+
+v0.1.5 verification: typecheck, all 25 tests, and production build passed. Browser checks confirmed no page overflow at 1280×720, 1366×768, 1366×640, 390×844, 390×668, and 341×607; controls had no internal overflow, the character measures 230px desktop and 155px narrow versus 92px and 62px previously, and the full claw frame fits the short-phone scene. The public `/dev` inspector has no modal, updates A01–A24 labels across interaction states, and remains noindex. Main-flow checks covered reset cancellation, stock panel, demo pull/keep, removal of old header sections, and no browser errors. The legend is intentionally below the hero on `/dev`; the homepage remains one-screen.
 
 ## Next iteration
 

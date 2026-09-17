@@ -370,8 +370,25 @@
   padding-bottom: 12px;
 }
 .arcade-view .arcade-scene {
-  --character-size: 230px;
   --character-lane: 156px;
+  --machine-gap: 14px;
+  --machine-inset: 18px;
+  --machine-max-width: 248px;
+  --machine-clearance: 180px;
+  --machine-width: min(
+    var(--machine-max-width),
+    calc((100cqh - var(--machine-clearance)) * 62 / 92),
+    calc(
+      (
+          100cqw - var(--character-lane) - var(--machine-inset) - 2 *
+            var(--machine-gap)
+        ) /
+        3
+    )
+  );
+  /* Ticket 018: standing artwork is 2/3 of the machine artwork height.
+     Visible pixels: machine 85/92, character 44/52; ignore transparent padding. */
+  --character-size: calc(var(--machine-width) * 85 / 62 * 2 / 3 * 52 / 44);
   flex: 1 1 0;
   height: auto;
   min-height: 0;
@@ -389,13 +406,13 @@
 }
 .arcade-view .scene-machines {
   left: var(--character-lane);
-  right: 18px;
+  right: var(--machine-inset);
   bottom: 56px;
-  gap: 14px;
+  gap: var(--machine-gap);
 }
 .arcade-view .scene-machine {
   /* Preserve the full 62 × 92 frame below the sign and selection arrow. */
-  flex: 0 1 min(248px, calc((100cqh - 180px) * 0.673913));
+  flex: 0 0 var(--machine-width);
 }
 .arcade-view .scene-machine-label {
   margin-top: 12px;
@@ -403,7 +420,7 @@
 .arcade-view .pixel-character {
   width: var(--character-size);
   height: var(--character-size);
-  left: -16px;
+  left: calc((var(--character-lane) - var(--character-size)) / 2);
   bottom: 29px;
   pointer-events: none;
 }
@@ -457,7 +474,6 @@
 
 @media (max-width: 1190px) {
   .arcade-view .arcade-scene {
-    --character-size: 205px;
     --character-lane: 136px;
   }
   .header-reset span {
@@ -469,12 +485,9 @@
 }
 @media (min-width: 761px) and (max-width: 960px) {
   .arcade-view .arcade-scene {
-    --character-size: 175px;
     --character-lane: 106px;
-  }
-  .arcade-view .scene-machines {
-    gap: 6px;
-    right: 10px;
+    --machine-gap: 6px;
+    --machine-inset: 10px;
   }
   .arcade-view .scene-sign {
     font-size: 8px;
@@ -530,8 +543,11 @@
     padding: 0;
   }
   .arcade-view .arcade-scene {
-    --character-size: 212.5px;
     --character-lane: 124px;
+    --machine-gap: 4px;
+    --machine-inset: 8px;
+    --machine-max-width: 150px;
+    --machine-clearance: 138px;
   }
   .arcade-view .scene-sign {
     top: 18px;
@@ -539,19 +555,13 @@
     gap: 7px;
   }
   .arcade-view .scene-machines {
-    right: 8px;
-    gap: 4px;
     bottom: 42px;
-  }
-  .arcade-view .scene-machine {
-    flex-basis: min(150px, calc((100cqh - 138px) * 0.673913));
   }
   .arcade-view .scene-machine-label {
     font-size: 6px;
     margin-top: 9px;
   }
   .arcade-view .pixel-character {
-    left: -15px;
     bottom: 22px;
   }
   .arcade-view .scene-caption {
@@ -582,7 +592,6 @@
 }
 @media (max-width: 480px) {
   .arcade-view .arcade-scene {
-    --character-size: 155px;
     --character-lane: 100px;
   }
   .arcade-view .scene-sign {
@@ -590,9 +599,6 @@
   }
   .arcade-view .scene-machine-label {
     font-size: 5px;
-  }
-  .arcade-view .pixel-character {
-    left: -12px;
   }
   .arcade-view .site-header .wallet-button {
     padding: 6px;

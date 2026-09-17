@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.6 — 2026-09-17
+
+- Sized the character responsively to two-thirds of the machine’s visible artwork height, accounting for transparent sprite margins across scene and inline-panel layouts; the natural idle bob is unchanged.
+- Verification passed: typecheck, all 25 tests, and production build. Browser checks measured a 0.6666–0.6668 visible character-to-machine ratio at 1502×845, 1366×640, 900×800, 390×844, and 376×668; the character was fully visible with no page overflow. Inline stock panel at 1366×768 measured 0.66667 and `/dev` A16 was present.
+
 ## v0.1.5 — 2026-09-17
 
 - Added the public `/dev` annotated working arcade review route with `noindex` metadata and simulated-only content, including browser-local demo wallet and collection state.

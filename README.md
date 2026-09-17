@@ -1,4 +1,4 @@
-# Gacha Arcade — v0.1.2
+# Gacha Arcade — v0.1.3
 
 A local, simulated Lorcana collectible arcade using the owner's original pixel art. Built with Next.js, TypeScript, and React; fonts and artwork are served locally.
 
@@ -9,13 +9,13 @@ npm install --cache .npm-cache
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. The server listens on loopback only. No environment variables or service credentials are required for this iteration.
+Open http://127.0.0.1:3000. The server listens on loopback only. Admin login requires the server-only variables documented in `.env.example`; no wallet or payment credentials are used.
 
-## Current release: v0.1.2
+## Current release: v0.1.3
 
 The visible release label is sourced from the `version` field in `package.json`; the npm lockfile must stay synchronized with it. For each published update, increment the patch version once, make the matching version commit, create the matching Git tag, and publish the matching GitHub release. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
 
-Current iteration: **v0.1.0-12 — Release versioning**. The next routine update will be **v0.1.3**; the next larger milestone will be **v0.2.0**.
+Current iteration: **v0.1.0-15 — Redemption and shipping state**. The next routine update will be **v0.1.4**; the next larger milestone will be **v0.2.0**.
 
 ## Simulation experience (ticket v0.1.0-11)
 
@@ -29,9 +29,11 @@ The complete interface now uses VT323 for readable pixel text, Press Start 2P fo
 - Animated claw sequence, skip reveal, optional synthesized sound, reduced-motion support.
 - 250 starting demo credits; sample pulls cost 10 / 25 / 60 credits.
 - Keep packs, resell for 80% of demo value in play credits, or preview shipping.
-- Browser-local inventory/history, reset control, and mobile layout.
+- Browser-local inventory/history, player collection filters/search/sort, reset control, and mobile layout. Local state is versioned and syncs between tabs; there is no shared server analytics.
 
-All values, odds, and transactions are simulations. The public fixture contains fictional sample stock only: demo quantities do not reflect warehouse stock. No wallet connection, real payments, payout, address collection, physical stock reservation, or shipment occurs. Browser state is not a trustworthy record for live commerce and is not synchronized between tabs or devices. This iteration starts a fresh sample-stock simulation and leaves the earlier demo session intact.
+An `/admin` view is protected by server-side password verification using `ADMIN_PASSWORD_SALT`, `ADMIN_PASSWORD_HASH` (64 scrypt bytes encoded as 128 hex characters), and `ADMIN_SESSION_SECRET`. Exact warehouse inventory is available only to an authenticated local development admin when `ADMIN_LOCAL_INVENTORY=1`; production keeps it disabled. Public stock remains fictional (“Ghost”) sample stock. Admin stats are same-browser demo values: online 0/1, browser players 0/1, total and per-machine pulls, revenue in CR, sellbacks, redemptions, and shipping requests. Profit displays “Costs not set” until costs are provided.
+
+All values, odds, and transactions are simulations. No wallet connection, real payments, payout, address collection, physical stock reservation, or shipment occurs. Redemption state is simulated as held → redeemed → queued → shipping. Queuing is available immediately; only the simulated shipping action unlocks from day 60 onward. The admin demo clock previews this rule; the actual launch date is unset. Storage v4 preserves the previous v3 session and migrates old shipping previews into queued requests.
 
 `pixelart/` contains untouched original artwork. `public/pixelart/` contains copies used by the app. Machines use 62×92 cells from 4×6 sheets; claw sequences use 114×110 cells from 5×18 sheets. The supplied Rare machine artwork itself reads LEVEL 3 and Epic reads LEVEL 2; the UI follows the source filenames until the owner confirms the intended mapping.
 
@@ -45,9 +47,11 @@ npm run build
 
 The production homepage is prerendered. Browser smoke path: select each machine → preview prizes → pull → keep or resell → inventory → preview shipping → history → reload. Check viewport fit on desktop and portrait phones, keyboard access, and the insufficient-credit/reset state.
 
+v0.1.3 verification: typecheck, 25 tests, and production build passed. Browser checks covered login/logout, stock views, collection history, redemption, queueing, the day-60 unlock, shipping status, tab synchronization, and phone layout. Production runtime checks confirmed unauthorized inventory returns 401 and authorized production access never returns the local warehouse file. Client bundles and deployment traces contain no admin secrets or private inventory files.
+
 ## Next iteration
 
-Review the arcade layout, artwork scale, and reveal timing first. Actual prize lists, prices, resale policy, network/token, and shipping scope can be added later. See `docs/v0.1.0-beta.md` for confirmed scope and open decisions.
+Review the arcade layout, collection flow, and redemption state first. Actual prize lists, prices, resale policy, network/token, launch date, and shipping scope can be added later. See `docs/v0.1.0-beta.md` for the ticket history and open decisions.
 
 ## Vercel setup
 
@@ -58,7 +62,7 @@ The intended GitHub repository is `https://github.com/kairo8080/gacha`. Push the
 - Build Command: keep the preset default; `npm run build` also works.
 - Output Directory: keep the Next.js preset default; do not set `out` or `dist`.
 - Install Command: keep the default; the committed npm lockfile provides dependency resolution.
-- Environment Variables: none for this simulation.
+- Environment Variables: configure the three admin session/password variables in Vercel to enable admin login; keep local physical inventory local and leave `ADMIN_LOCAL_INVENTORY=1` disabled in production.
 - A purchased domain is optional; Vercel provides generated `.vercel.app` addresses.
 
 `vercel.json` declares the Next.js framework. All behavior remains simulated when deployed. Original editing/reference exports under `pixelart/` are optional for running the app; its required artwork is copied under `public/pixelart/`.

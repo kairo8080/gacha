@@ -28,20 +28,19 @@ import {
 import {
   demoReducer,
   drawPrizeIndex,
-  initialState,
-  LEGACY_STORAGE_KEY,
   machineStock,
   machines,
-  parseSavedState,
   remainingStock,
   resaleValue,
   stockCatalog,
-  STORAGE_KEY,
   type InventoryItem,
   type MachineId,
   type Prize,
 } from "@/lib/demo";
 import { APP_VERSION } from "@/lib/version";
+import { useDemoSession } from "@/hooks/use-demo-session";
+import { useDemoPresence } from "@/hooks/use-demo-presence";
+import { PlayerInventory } from "@/components/player-inventory";
 
 const credits = (value: number) =>
   new Intl.NumberFormat("en", { maximumFractionDigits: 2 }).format(value);
@@ -50,7 +49,7 @@ const accents: Record<MachineId, string> = {
   rare: "#c073f5",
   epic: "#ffd34d",
 };
-type Modal = "how" | "wallet" | "result" | "reset" | "shipping" | "pool" | null;
+type Modal = "how" | "wallet" | "result" | "redeem" | "reset" | "pool" | null;
 
 function MachineSprite({
   id,
@@ -72,7 +71,7 @@ function MachineSprite({
   );
 }
 
-function PrizeSymbol({ prize }: { prize: Prize }) {
+export function PrizeSymbol({ prize }: { prize: Prize }) {
   return (
     <div className={`prize-symbol ${prize.kind}`} aria-hidden="true">
       {prize.kind === "graded" ? <ShieldCheck /> : <Package />}
@@ -146,69 +145,46 @@ function Dialog({
 }
 
 export default function Arcade() {
-  const [ready, setReady] = useState(false);
+  const {
+    state: activeState,
+    setState,
+    ready,
+    storageWarning,
+    legacySessionNotice,
+    demoDay,
+  } = useDemoSession();
+  useDemoPresence(true);
   const [selected, setSelected] = useState<MachineId>("common");
   const [view, setView] = useState<"arcade" | "inventory">("arcade");
-  const [filter, setFilter] = useState<"held" | "history">("held");
   const [modal, setModal] = useState<Modal>(null);
   const [sound, setSound] = useState(false);
   const [running, setRunning] = useState(false);
   const [resultId, setResultId] = useState<string | null>(null);
-  const [shippingId, setShippingId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
-  const [storageWarning, setStorageWarning] = useState(false);
-  const [legacySessionNotice, setLegacySessionNotice] = useState(false);
+  const [showLegacySessionNotice, setShowLegacySessionNotice] = useState(true);
   const [showAllStock, setShowAllStock] = useState(false);
   const pullLock = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const machine = machines.find((item) => item.id === selected)!;
 
-  // Restore via a dedicated action wrapper, keeping the pure reducer unaware of the browser.
-  const [savedState, setSavedState] = useState<typeof initialState | null>(
-    null,
-  );
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      setSavedState(parseSavedState(saved));
-      setLegacySessionNotice(
-        saved === null && localStorage.getItem(LEGACY_STORAGE_KEY) !== null,
-      );
-    } catch {
-      setStorageWarning(true);
-      setSavedState(initialState);
-    }
-    setReady(true);
     return () => {
       if (timer.current) clearTimeout(timer.current);
       if (noticeTimer.current) clearTimeout(noticeTimer.current);
     };
   }, []);
 
-  // The persisted demo session is the starting point for all subsequent actions.
-  const activeState = savedState ?? initialState;
   const activeHeld = activeState.items.filter((item) => item.status === "held");
   const activeResult = activeState.items.find((item) => item.id === resultId);
-  const activeShipping = activeState.items.find(
-    (item) => item.id === shippingId,
-  );
   const selectedMachineStock = machineStock(activeState, selected);
   const totalRemainingStock = stockCatalog.reduce(
     (total, prize) => total + remainingStock(activeState, prize.id),
     0,
   );
   function act(action: Parameters<typeof demoReducer>[1]) {
-    setSavedState((current) => demoReducer(current ?? initialState, action));
+    setState((current) => demoReducer(current, action));
   }
-  useEffect(() => {
-    if (!ready || savedState === null) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
-    } catch {
-      setStorageWarning(true);
-    }
-  }, [savedState, ready]);
 
   function notify(message: string) {
     setNotice(message);
@@ -288,7 +264,7 @@ export default function Arcade() {
       notify("This pull could not be completed. Please try again.");
       return;
     }
-    setSavedState(nextState);
+    setState(nextState);
     beep();
     setResultId(itemId);
     setRunning(true);
@@ -311,13 +287,6 @@ export default function Arcade() {
       setModal(null);
     }
   }
-  const displayedItems = activeState.items
-    .filter((item) =>
-      filter === "held" ? item.status === "held" : item.status !== "held",
-    )
-    .slice()
-    .reverse();
-
   return (
     <div
       className={`app-shell ${view === "arcade" ? "arcade-view" : "inventory-view"}`}
@@ -339,7 +308,10 @@ export default function Arcade() {
           <span>
             GACHA<span className="brand-sub">ARCADE</span>
           </span>
-          <span className="release-version" aria-label={`Version ${APP_VERSION}`}>
+          <span
+            className="release-version"
+            aria-label={`Version ${APP_VERSION}`}
+          >
             {APP_VERSION}
           </span>
         </button>
@@ -400,7 +372,7 @@ export default function Arcade() {
             <div className="eyebrow">
               <span className="pixel-square" />
               THE LORCANA ROOM <span className="eyebrow-divider">/</span>{" "}
-              {view === "arcade" ? "SELECT A MACHINE" : "YOUR COLLECTION"}
+              {view === "arcade" ? "SELECT A MACHINE" : "YOUR COLLECTION."}
             </div>
             <h1>
               {view === "arcade" ? (
@@ -409,14 +381,14 @@ export default function Arcade() {
                 </>
               ) : (
                 <>
-                  Your next favorites.<span> All in one place.</span>
+                  Your pulls.<span> Your next move.</span>
                 </>
               )}
             </h1>
             <p>
               {view === "arcade"
                 ? "Three machines. A world of collectibles. Which one calls to you?"
-                : "Keep your pulls, try a resale, or preview a shipping request."}
+                : "Keep, resell, redeem, or queue a demo shipment."}
             </p>
           </div>
           <div className="edition">
@@ -687,120 +659,12 @@ export default function Arcade() {
             </div>
           </>
         ) : (
-          <section className="inventory-section">
-            <div className="inventory-toolbar">
-              <div className="inventory-tabs">
-                <button
-                  className={filter === "held" ? "active" : ""}
-                  onClick={() => setFilter("held")}
-                >
-                  In inventory <span>{activeHeld.length}</span>
-                </button>
-                <button
-                  className={filter === "history" ? "active" : ""}
-                  onClick={() => setFilter("history")}
-                >
-                  History{" "}
-                  <span>{activeState.items.length - activeHeld.length}</span>
-                </button>
-              </div>
-              <span className="mono muted">
-                {activeState.pulls} DEMO PULL
-                {activeState.pulls === 1 ? "" : "S"}
-              </span>
-            </div>
-            {displayedItems.length === 0 ? (
-              <div className="empty-inventory">
-                <div className="empty-sprite">
-                  <MachineSprite id="common" />
-                </div>
-                <span className="eyebrow">
-                  {filter === "held"
-                    ? "YOUR COLLECTION STARTS HERE"
-                    : "ALL QUIET HERE"}
-                </span>
-                <h2>
-                  {filter === "held"
-                    ? "A little room for something great."
-                    : "Your next chapter is unwritten."}
-                </h2>
-                <p>
-                  {filter === "held"
-                    ? "Try a machine. Your demo prizes will be waiting here."
-                    : "Resold items and shipping previews appear here."}
-                </p>
-                <button
-                  className="primary-button"
-                  onClick={() => setView("arcade")}
-                >
-                  Explore the arcade <ArrowRight size={17} />
-                </button>
-              </div>
-            ) : (
-              <div className="inventory-grid">
-                {displayedItems.map((item) => (
-                  <article
-                    className="inventory-card"
-                    key={item.id}
-                    style={
-                      {
-                        "--tier-color": accents[item.machineId],
-                      } as CSSProperties
-                    }
-                  >
-                    <div className="inventory-card-top">
-                      <span className="tier-badge">
-                        {item.machineId.toUpperCase()}
-                      </span>
-                      <span className={`item-status ${item.status}`}>
-                        {item.status === "held"
-                          ? "IN INVENTORY"
-                          : item.status === "sold"
-                            ? "RESOLD · DEMO"
-                            : "SHIPPING · DEMO"}
-                      </span>
-                    </div>
-                    <PrizeSymbol prize={item.prize} />
-                    <h3>{item.prize.name}</h3>
-                    <p>{item.prize.detail}</p>
-                    <div className="inventory-value">
-                      <span>Demo value</span>
-                      <strong>{credits(item.prize.value)} CR</strong>
-                    </div>
-                    {item.status === "held" ? (
-                      <div className="inventory-actions">
-                        <button
-                          onClick={() => {
-                            setResultId(item.id);
-                            setModal("result");
-                          }}
-                        >
-                          <RotateCcw size={15} />
-                          Resell
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShippingId(item.id);
-                            setModal("shipping");
-                          }}
-                        >
-                          <Truck size={15} />
-                          Ship
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="completed-action">
-                        <Check size={15} />
-                        {item.status === "sold"
-                          ? `${credits(resaleValue(item.prize))} demo credits returned`
-                          : "Preview request saved. No shipment created."}
-                      </div>
-                    )}
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
+          <PlayerInventory
+            state={activeState}
+            setState={setState}
+            demoDay={demoDay}
+            onBack={() => setView("arcade")}
+          />
         )}
 
         <footer className="site-footer">
@@ -812,6 +676,7 @@ export default function Arcade() {
             <span>Made for collectors.</span>
             <span className="footer-dot">·</span>
             <button onClick={() => setModal("how")}>How it works</button>
+            <a href="/admin">Admin</a>
             <span className="version">{APP_VERSION} beta</span>
           </div>
         </footer>
@@ -823,7 +688,7 @@ export default function Arcade() {
           refresh.
         </div>
       )}
-      {legacySessionNotice && (
+      {legacySessionNotice && showLegacySessionNotice && (
         <div className="storage-warning legacy-session-notice" role="status">
           <span>
             Your previous demo is saved separately. This is a fresh sample-stock
@@ -832,7 +697,7 @@ export default function Arcade() {
           <button
             className="icon-button"
             aria-label="Dismiss session notice"
-            onClick={() => setLegacySessionNotice(false)}
+            onClick={() => setShowLegacySessionNotice(false)}
           >
             <X size={16} />
           </button>
@@ -857,8 +722,8 @@ export default function Arcade() {
         title={
           modal === "result"
             ? "Your demo prize"
-            : modal === "shipping"
-              ? "Preview shipping request"
+            : modal === "redeem"
+              ? "Redeem demo prize"
               : modal === "reset"
                 ? "Reset demo"
                 : modal === "wallet"
@@ -884,12 +749,10 @@ export default function Arcade() {
             </p>
             <div className="pool-summary">
               <span>
-                {showAllStock ? totalRemainingStock : selectedMachineStock} sample
-                {" "}packs remaining
+                {showAllStock ? totalRemainingStock : selectedMachineStock}{" "}
+                sample packs remaining
               </span>
-              <span>
-                fictional game config
-              </span>
+              <span>fictional game config</span>
             </div>
             <button
               className="text-button full-width pool-toggle"
@@ -935,7 +798,8 @@ export default function Arcade() {
                           {credits(prize.value)} CR <span>demo value</span>
                         </strong>
                         <p className="stock-line">
-                          Sample stock: {remaining} / {prize.startingQuantity} packs
+                          Sample stock: {remaining} / {prize.startingQuantity}{" "}
+                          packs
                           {!showAllStock && machineTotal > 0
                             ? ` · ${((remaining / machineTotal) * 100).toFixed(1)}% current odds`
                             : ""}
@@ -1034,6 +898,9 @@ export default function Arcade() {
               Crypto payments will be connected after the network, token, and
               machine prices are confirmed.
             </div>
+            <a className="text-button" href="/admin">
+              Demo admin
+            </a>
             <button
               className="primary-button full-width"
               onClick={() => setModal(null)}
@@ -1050,9 +917,7 @@ export default function Arcade() {
                 : "YOUR DEMO PRIZE"}
             </span>
             <h2>
-              {activeResult.status === "held"
-                ? "Look what you found."
-                : "This one is settled."}
+              {activeResult.status === "held" ? "New pull." : "Demo record."}
             </h2>
             <div
               className="result-prize"
@@ -1094,17 +959,15 @@ export default function Arcade() {
                   </button>
                   <button
                     onClick={() => {
-                      setShippingId(activeResult.id);
-                      setModal("shipping");
+                      setModal("redeem");
                     }}
                   >
                     <Truck size={17} />
-                    <span>Preview shipping</span>
+                    <span>Redeem</span>
                   </button>
                 </div>
                 <p className="dialog-note">
-                  Demo resale: 80% of sample item value, returned as play
-                  credits. Your prize is already saved if you close this window.
+                  Sample value only. Your pull is already saved.
                 </p>
               </>
             ) : (
@@ -1116,42 +979,26 @@ export default function Arcade() {
             )}
           </>
         )}
-        {modal === "shipping" && activeShipping && (
+        {modal === "redeem" && activeResult && (
           <>
-            <span className="dialog-icon">
-              <Truck size={30} />
-            </span>
-            <span className="eyebrow">SHIPPING PREVIEW</span>
-            <h2>
-              From your vault
-              <br />
-              to your doorstep.
-            </h2>
+            <span className="eyebrow">DEMO ACTION</span>
+            <h2>Redeem this pull?</h2>
             <p>
-              <strong>{activeShipping.prize.name}</strong>
+              <strong>{activeResult.prize.name}</strong>
             </p>
-            <p>
-              For the live beta, physical items will ship from Portugal.
-              Destinations, shipping rates, and address collection are still to
-              be configured.
+            <p className="dialog-note">
+              Redeem unlocks the shipping queue. Shipping opens 60 days after
+              launch; you can queue now.
             </p>
-            <div className="dialog-note">
-              This demo marks the item as requested for shipping and removes
-              resale access. No address is collected and no real shipment is
-              created.
-            </div>
             <button
               className="primary-button full-width"
-              disabled={activeShipping.status !== "held"}
               onClick={() => {
-                act({ type: "ship", itemId: activeShipping.id });
+                act({ type: "redeem", itemId: activeResult.id });
                 setModal(null);
-                notify(
-                  "Demo shipping request saved. No real shipment created.",
-                );
+                notify("Redeemed in your demo collection.");
               }}
             >
-              Save demo shipping request <ArrowRight size={17} />
+              Redeem <Check size={17} />
             </button>
           </>
         )}

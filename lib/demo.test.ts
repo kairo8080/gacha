@@ -5,6 +5,8 @@ import {
   initialState,
   machines,
   parseSavedState,
+  parsePreviousSavedState,
+  getShippingStage,
   resaleValue,
   stockCatalog,
   totalStartingStock,
@@ -65,7 +67,12 @@ test("resale value keeps two decimal demo credits", () => {
 });
 
 test("selling and shipping are mutually exclusive", () => {
-  const shipped = demoReducer(pulled(), { type: "ship", itemId: "item-1" });
+  const queued = demoReducer(pulled(), { type: "queue", itemId: "item-1" });
+  const shipped = demoReducer(queued, {
+    type: "ship",
+    itemId: "item-1",
+    demoDay: 60,
+  });
   assert.equal(shipped.items[0].status, "shipping");
   assert.equal(
     demoReducer(shipped, { type: "sell", itemId: "item-1" }),
@@ -131,10 +138,116 @@ test("a pull reserves one pack, resale returns it once, and shipping keeps it re
   );
   assert.equal(
     remainingStock(
-      demoReducer(state, { type: "ship", itemId: "item-1" }),
+      demoReducer(state, { type: "queue", itemId: "item-1" }),
       prizeId,
     ),
     99,
+  );
+});
+
+test("redemption and queuing reserve a prize and permanently prevent resale", () => {
+  const state = pulled();
+  const redeemed = demoReducer(state, { type: "redeem", itemId: "item-1" });
+  assert.equal(redeemed.items[0].status, "redeemed");
+  assert.equal(redeemed.balance, state.balance);
+  assert.equal(
+    demoReducer(redeemed, { type: "redeem", itemId: "item-1" }),
+    redeemed,
+  );
+  assert.equal(
+    demoReducer(redeemed, { type: "sell", itemId: "item-1" }),
+    redeemed,
+  );
+  const queued = demoReducer(redeemed, { type: "queue", itemId: "item-1" });
+  assert.equal(queued.items[0].status, "queued");
+  assert.equal(demoReducer(queued, { type: "sell", itemId: "item-1" }), queued);
+  assert.equal(
+    demoReducer(queued, { type: "queue", itemId: "item-1" }),
+    queued,
+  );
+  assert.equal(remainingStock(queued, state.items[0].prize.id), 99);
+  assert.deepEqual(
+    demoReducer(state, { type: "queue", itemId: "item-1" }),
+    queued,
+  );
+  const sold = demoReducer(state, { type: "sell", itemId: "item-1" });
+  assert.equal(demoReducer(sold, { type: "redeem", itemId: "item-1" }), sold);
+  assert.equal(demoReducer(sold, { type: "queue", itemId: "item-1" }), sold);
+});
+
+test("only queued requests ship, at validated demo day 60 or later", () => {
+  const held = pulled();
+  const redeemed = demoReducer(held, { type: "redeem", itemId: "item-1" });
+  for (const state of [held, redeemed]) {
+    assert.equal(
+      demoReducer(state, { type: "ship", itemId: "item-1", demoDay: 60 }),
+      state,
+    );
+  }
+  const queued = demoReducer(held, { type: "queue", itemId: "item-1" });
+  for (const demoDay of [-1, 0, 59, 59.9, 60.5, 3651, Infinity, NaN]) {
+    assert.equal(
+      demoReducer(queued, { type: "ship", itemId: "item-1", demoDay }),
+      queued,
+    );
+  }
+  assert.equal(getShippingStage(queued.items[0], 59), "queued");
+  assert.equal(getShippingStage(queued.items[0], 60), "ready");
+  for (const demoDay of [60, 61, 3650]) {
+    const shipped = demoReducer(queued, {
+      type: "ship",
+      itemId: "item-1",
+      demoDay,
+    });
+    assert.equal(shipped.items[0].status, "shipping");
+    assert.equal(shipped.balance, held.balance);
+    assert.equal(
+      demoReducer(shipped, { type: "ship", itemId: "item-1", demoDay }),
+      shipped,
+    );
+    assert.equal(
+      demoReducer(shipped, { type: "queue", itemId: "item-1" }),
+      shipped,
+    );
+  }
+});
+
+test("all current lifecycle states round-trip and old shipping previews migrate to queued", () => {
+  for (const status of [
+    "held",
+    "sold",
+    "redeemed",
+    "queued",
+    "shipping",
+  ] as const) {
+    const state = pulled();
+    state.items[0] = { ...state.items[0], status };
+    assert.deepEqual(parseSavedState(JSON.stringify(state)), state);
+    const migrated = parsePreviousSavedState(JSON.stringify(state));
+    assert.equal(
+      migrated.items[0].status,
+      status === "shipping" ? "queued" : status,
+    );
+  }
+  const state = pulled();
+  assert.equal(
+    parseSavedState(
+      JSON.stringify({
+        ...state,
+        pulls: 2,
+        items: [...state.items, ...state.items],
+      }),
+    ),
+    initialState,
+  );
+  assert.equal(
+    parseSavedState(
+      JSON.stringify({
+        ...state,
+        items: [{ ...state.items[0], status: "delivered" }],
+      }),
+    ),
+    initialState,
   );
 });
 

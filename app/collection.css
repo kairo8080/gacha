@@ -1,0 +1,422 @@
+/* Player collection: local demo records, rendered with the shared pixel skin. */
+.player-collection {
+  min-width: 0;
+  border: 3px solid #586f92;
+  background: #202e48;
+  box-shadow:
+    inset 2px 2px #768caf,
+    inset -2px -2px #142038,
+    5px 5px #080f20;
+  padding: 22px;
+}
+.collection-scoreboard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 3px solid #101b30;
+  background: #17243b;
+}
+.collection-scoreboard > div {
+  min-width: 0;
+  padding: 13px 15px;
+  border-right: 2px solid #405573;
+}
+.collection-scoreboard > div:last-child {
+  border-right: 0;
+}
+.collection-scoreboard span,
+.collection-search,
+.collection-sort {
+  display: block;
+  color: #a9bfdc;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+}
+.collection-scoreboard strong {
+  display: block;
+  color: #f5e4a9;
+  font-size: 32px;
+  line-height: 1.08;
+}
+.collection-scoreboard small {
+  font-size: 15px;
+  color: #bdd0e5;
+}
+.best-pull {
+  background: linear-gradient(90deg, #293b58, #1e304b);
+}
+.best-pull b {
+  display: block;
+  margin-top: 3px;
+  color: #d7e5f5;
+  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collection-controls {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  border-bottom: 3px solid #142038;
+  padding: 20px 0;
+}
+.collection-tabs {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.collection-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #182842;
+  border: 2px solid #405573;
+  color: #b5c7de;
+  padding: 6px 9px;
+  font-size: 17px;
+}
+.collection-tabs button:hover {
+  border-color: #7896ba;
+  color: #f2f8ff;
+}
+.collection-tabs button.active {
+  background: #355174;
+  color: #edffed;
+  border-color: #91b6d6;
+}
+.collection-tabs button span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  background: #142139;
+  color: #b9cce2;
+  font-size: 13px;
+}
+.collection-tabs button.active span {
+  background: #b7e4d2;
+  color: #17372f;
+}
+.collection-search,
+.collection-sort {
+  font-size: 13px;
+}
+.collection-search input,
+.collection-sort select {
+  display: block;
+  background: #111d32;
+  border: 2px solid #587397;
+  color: #e7eff7;
+  font: 18px var(--font-pixel-body);
+  height: 34px;
+  padding: 2px 7px;
+}
+.collection-search input:focus,
+.collection-sort select:focus {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+.collection-search input {
+  width: 138px;
+}
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 20px;
+}
+.collection-card {
+  position: relative;
+  min-width: 0;
+  background: #1b2941;
+  border: 3px solid #526c91;
+  box-shadow:
+    inset 2px 2px #536f95,
+    inset -2px -2px #101b30;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+.collection-card:hover {
+  border-color: #91accd;
+}
+.collection-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.collection-card .tier-badge {
+  font-size: 13px;
+}
+.collection-card .item-status {
+  font-size: 13px;
+  color: #b9cbe0;
+}
+.collection-card .item-status.sold {
+  color: #a9dfab;
+}
+.collection-card .item-status.redeemed,
+.collection-card .item-status.queued {
+  color: #f4d58b;
+}
+.collection-card .item-status.shipping {
+  color: #caa9ed;
+}
+.collection-symbol {
+  width: 78px;
+  height: 88px;
+  margin: 16px auto 8px;
+  border: 3px solid var(--tier-color);
+  background: #15213a;
+  box-shadow: 4px 4px #080f20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--tier-color);
+}
+.collection-symbol.graded {
+  background: #2b2537;
+}
+.collection-symbol span {
+  font-size: 12px;
+  margin-top: 6px;
+}
+.collection-value {
+  font-size: 36px;
+  color: #f3d887;
+  line-height: 1;
+  text-shadow: 2px 2px #101827;
+}
+.collection-value small {
+  font-size: 15px;
+}
+.collection-card h3 {
+  font-family: var(--font-pixel-title);
+  font-size: 11px;
+  line-height: 1.55;
+  margin: 12px 0 5px;
+  color: #e8eff7;
+}
+.collection-card p {
+  font-size: 18px;
+  line-height: 1.15;
+  color: #aebed4;
+  margin: 0 0 12px;
+  min-height: 42px;
+}
+.item-trail {
+  margin-top: auto;
+  border-top: 2px solid #324967;
+  padding-top: 9px;
+  display: flex;
+  justify-content: space-between;
+  gap: 7px;
+  text-align: left;
+  color: #9fb4cf;
+  font-size: 13px;
+}
+.item-trail span:last-child {
+  text-align: right;
+}
+.collection-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 12px;
+}
+.collection-actions button,
+.queue-button {
+  border: 2px solid #6681a4;
+  background: #2c405f;
+  color: #e2ebf5;
+  font: 17px var(--font-pixel-body);
+  padding: 8px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.collection-actions button:hover,
+.queue-button:hover {
+  border-color: var(--lime);
+  color: #edffe2;
+}
+.queue-button {
+  width: 100%;
+  margin-top: 12px;
+  background: #514333;
+  border-color: #b19556;
+  color: #ffebaf;
+}
+.queue-status {
+  margin-top: 12px;
+  padding: 9px;
+  background: #263650;
+  color: #c5d9eb;
+  font-size: 17px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+}
+.collection-empty {
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 50px 20px;
+  color: #b8c9df;
+}
+.collection-empty > svg {
+  color: var(--lime);
+  margin-bottom: 12px;
+}
+.collection-empty h2 {
+  font-family: var(--font-pixel-title);
+  font-size: 15px;
+  line-height: 1.6;
+  color: #eff5fc;
+}
+.collection-empty p {
+  max-width: 330px;
+  margin: 10px 0 22px;
+}
+.collection-clear {
+  color: #d5e6f7;
+  border-bottom: 2px solid #607da4;
+  padding: 4px 2px;
+}
+.collection-clear:hover {
+  color: var(--lime);
+  border-color: var(--lime);
+}
+.collection-confirm {
+  width: min(430px, calc(100vw - 32px));
+  margin: auto;
+  padding: 0;
+  border: 3px solid #7c99be;
+  background: #202e48;
+  color: var(--text);
+  box-shadow: 7px 7px #080f20;
+}
+.collection-confirm::backdrop {
+  background: #080f20d9;
+}
+.collection-confirm > div {
+  padding: 24px;
+}
+.collection-confirm h2 {
+  font-family: var(--font-pixel-title);
+  font-size: 16px;
+  line-height: 1.7;
+  margin: 11px 0;
+}
+.collection-confirm p {
+  font-size: 21px;
+  margin: 5px 0;
+}
+.collection-confirm .dialog-note {
+  font-size: 18px;
+  color: #adc0d7;
+  line-height: 1.25;
+}
+.collection-confirm > div > div {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.collection-confirm .text-button {
+  color: #d1ddeb;
+}
+.site-footer a {
+  color: #b8cce4;
+  font: inherit;
+  text-decoration: none;
+}
+.site-footer a:hover {
+  color: var(--lime);
+}
+@media (max-width: 1000px) {
+  .collection-scoreboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .collection-scoreboard > div:nth-child(2) {
+    border-right: 0;
+  }
+  .collection-scoreboard > div:nth-child(-n + 2) {
+    border-bottom: 2px solid #405573;
+  }
+  .collection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .collection-controls {
+    flex-wrap: wrap;
+  }
+  .collection-tabs {
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 760px) {
+  .player-collection {
+    padding: 15px;
+  }
+  .collection-scoreboard strong {
+    font-size: 27px;
+  }
+  .collection-controls {
+    align-items: stretch;
+    padding: 15px 0;
+  }
+  .collection-tabs {
+    gap: 4px;
+  }
+  .collection-tabs button {
+    font-size: 15px;
+    padding: 5px 7px;
+  }
+  .collection-search {
+    flex: 1;
+  }
+  .collection-search input {
+    width: 100%;
+  }
+  .collection-sort {
+    width: 105px;
+  }
+  .collection-sort select {
+    width: 100%;
+  }
+  .collection-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .collection-card {
+    padding: 14px;
+  }
+  .collection-card p {
+    min-height: 0;
+  }
+  .item-trail {
+    font-size: 12px;
+  }
+  .collection-confirm > div {
+    padding: 20px;
+  }
+  .collection-confirm h2 {
+    font-size: 14px;
+  }
+  .collection-confirm p {
+    font-size: 19px;
+  }
+  .collection-confirm .dialog-note {
+    font-size: 17px;
+  }
+}

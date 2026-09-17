@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.3 — 2026-09-17
+
+- Added protected `/admin` access with server-only password/session environment variables and same-browser demo stats.
+- Added player collection search, filters, sorting, and best historical pull presentation.
+- Added v4 local-storage migration and tab synchronization, plus simulated held → redeemed → queued → shipping state with day-60 admin demo-clock gating.
+- Kept exact warehouse inventory local to authenticated development admin sessions; public “Ghost” stock remains fictional and production inventory access is disabled.
+
 ## v0.1.2 — 2026-09-14
 
 - Added a visible top-left release version label for desktop and mobile layouts.

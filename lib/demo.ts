@@ -33,7 +33,7 @@ export type InventoryItem = {
   id: string;
   prize: Prize;
   machineId: MachineId;
-  status: "held" | "sold" | "shipping";
+  status: "held" | "sold" | "redeemed" | "queued" | "shipping";
   createdAt: string;
 };
 
@@ -49,7 +49,27 @@ export const initialState: DemoState = { balance: 250, items: [], pulls: 0 };
 export const resaleRate = 0.8;
 // Keep the old sample-prize session intact; stock simulation starts separately.
 export const LEGACY_STORAGE_KEY = "gacha-demo-v1";
-export const STORAGE_KEY = "gacha-demo-sample-v3";
+export const PREVIOUS_STORAGE_KEY = "gacha-demo-sample-v3";
+export const STORAGE_KEY = "gacha-demo-sample-v4";
+export const SHIPPING_UNLOCK_DAY = 60;
+
+export function isValidDemoDay(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= 3650
+  );
+}
+
+/** The demo clock is a scenario control, not a real launch date or delivery promise. */
+export function getShippingStage(item: InventoryItem, demoDay: number) {
+  return item.status === "queued" &&
+    isValidDemoDay(demoDay) &&
+    demoDay >= SHIPPING_UNLOCK_DAY
+    ? ("ready" as const)
+    : item.status;
+}
 
 /** Kept and shipping-preview packs are reserved; demo resales return to this pool. */
 export function remainingStock(state: DemoState, prizeId: string): number {
@@ -89,7 +109,7 @@ export function resaleValue(prize: Prize): number {
   return Math.round(prize.value * resaleRate * 100) / 100;
 }
 
-type DemoAction =
+export type DemoAction =
   | {
       type: "pull";
       machineId: MachineId;
@@ -98,7 +118,9 @@ type DemoAction =
       createdAt: string;
     }
   | { type: "sell"; itemId: string }
-  | { type: "ship"; itemId: string }
+  | { type: "redeem"; itemId: string }
+  | { type: "queue"; itemId: string }
+  | { type: "ship"; itemId: string; demoDay: number }
   | { type: "reset" };
 
 const machineById = (id: MachineId) =>
@@ -139,9 +161,10 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
   }
 
   const item = state.items.find((candidate) => candidate.id === action.itemId);
-  if (!item || item.status !== "held") return state;
+  if (!item) return state;
 
   if (action.type === "sell") {
+    if (item.status !== "held") return state;
     return {
       ...state,
       balance: state.balance + resaleValue(item.prize),
@@ -151,12 +174,27 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
     };
   }
 
-  if (action.type === "ship") {
+  let nextStatus: InventoryItem["status"] | undefined;
+  if (action.type === "redeem" && item.status === "held")
+    nextStatus = "redeemed";
+  if (
+    action.type === "queue" &&
+    (item.status === "held" || item.status === "redeemed")
+  )
+    nextStatus = "queued";
+  if (
+    action.type === "ship" &&
+    item.status === "queued" &&
+    isValidDemoDay(action.demoDay) &&
+    action.demoDay >= SHIPPING_UNLOCK_DAY
+  )
+    nextStatus = "shipping";
+  if (nextStatus) {
     return {
       ...state,
       items: state.items.map((candidate) =>
         candidate.id === item.id
-          ? { ...candidate, status: "shipping" }
+          ? { ...candidate, status: nextStatus }
           : candidate,
       ),
     };
@@ -243,12 +281,30 @@ export function parseSavedState(raw: string | null): DemoState {
   }
 }
 
+/** v3 shipping was only a preview; retain its request without marking it fulfilled. */
+export function parsePreviousSavedState(raw: string | null): DemoState {
+  const state = parseSavedState(raw);
+  if (state === initialState) return state;
+  return {
+    ...state,
+    items: state.items.map((item) =>
+      item.status === "shipping" ? { ...item, status: "queued" } : item,
+    ),
+  };
+}
+
 function isMachineId(value: unknown): value is MachineId {
   return value === "common" || value === "rare" || value === "epic";
 }
 
 function isStatus(value: unknown): value is InventoryItem["status"] {
-  return value === "held" || value === "sold" || value === "shipping";
+  return (
+    value === "held" ||
+    value === "sold" ||
+    value === "redeemed" ||
+    value === "queued" ||
+    value === "shipping"
+  );
 }
 
 function samePrize(saved: Record<string, unknown>, prize: Prize): boolean {

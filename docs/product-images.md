@@ -30,4 +30,6 @@ Other filenames:
 
 Use photos of your actual graded cards and mystery-box packaging. Generic PSA sample entries do not identify a specific real card. For additional items, edit the Image path field to point at /products/your-item.webp. Only local product files are accepted.
 
-The admin page discovers available files at build time. Missing images show NO PHOTO without issuing broken requests. Public catalog values and quantities remain fictional. Source references for supplied official images are in product-image-sources.md.
+The admin page discovers available files at build time. Missing images show NO PHOTO without issuing broken requests. Public catalog values and quantities remain fictional. Source references for official and owner-supplied images are in `product-image-sources.md`.
+
+As of v0.1.12, all 14 booster-box photos are installed as PNG files using the stems above. Pack photos exist for sets #01–#04, and the D23 photo is also installed. Pack photos for #05–#14 and photos for the PSA/mystery entries remain to be supplied. Keep new original downloads in `images/`; copy only the matched product files into `public/products/`.

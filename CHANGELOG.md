@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.12 — 2026-09-18
+
+- Added the owner's 14 English booster-box product photos to Ghost Stock List and Cards views, matched to sets #01–#14.
+- Preserved the original downloads and added unchanged deployment copies with consistent product filenames and documented sources.
+- Booster-pack entries retain separate pack photos; stock, prices and odds are unchanged.
+- Verified all 14 source/copy hashes, typecheck, all 55 tests, production build, and loaded images in both desktop stock views.
+
 ## v0.1.11 — 2026-09-18
 
 - Colored Common, Rare, Epic and Event stock assignments; added per-machine item probabilities and a sortable card view alongside the list.

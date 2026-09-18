@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.10 — 2026-09-18
+
+- Expanded the desktop admin to the full viewport, moved navigation into the header, and replaced the permanent prize side panel with a sortable, filterable stock table and inline row editing.
+- Added product photos, item type and amount, total/reserved/available quantities, and separate Common/Rare/Epic/Event assignment columns. Machine assignments share one stock ledger.
+- Added paused/retired availability and automatic out-of-stock labels. Ineligible items cannot be drawn; historical rewards and their resale values remain intact. Event-only entries are reserved for a future event machine.
+- Added seven verified English product images and a consistent filename guide for missing photos. Image paths are limited to local product assets.
+- All catalog edits and stock tracking remain a browser-local simulation with fictional counts.
+- Verified typecheck, all 38 tests, production build, desktop table bounds, sorting/filtering, inline typing and validation, saved Event assignments, stock exhaustion/refill, and paused-item exclusion from the player pool.
+
 ## v0.1.9 — 2026-09-18
 
 - Added a compact inline Ghost Stock editor with numbered sets, search/type/machine filters, editable demo values and quantities, and shared stock across multiple machines.

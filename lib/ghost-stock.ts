@@ -7,6 +7,17 @@ export function isMachineId(
   return value === "common" || value === "rare" || value === "epic";
 }
 
+/** Product images are reviewed local assets; remote URLs and nested paths are invalid. */
+export function isProductImagePath(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length <= 200 &&
+    /^\/products\/[a-z0-9]+(?:[-_][a-z0-9]+)*\.(?:webp|png|jpg|jpeg)$/.test(
+      value,
+    )
+  );
+}
+
 export function isCardmarketReference(value: unknown): value is string {
   if (typeof value !== "string" || value.length > 1000) return false;
   try {
@@ -69,6 +80,15 @@ export function isStockPrize(value: unknown): value is StockPrize {
   const prize = value as StockPrize;
   return (
     prize.language === "EN" &&
+    (prize.specialEvent === undefined ||
+      typeof prize.specialEvent === "boolean") &&
+    (prize.availability === undefined ||
+      prize.availability === "active" ||
+      prize.availability === "paused" ||
+      prize.availability === "retired") &&
+    (prize.imagePath === undefined ||
+      prize.imagePath === null ||
+      isProductImagePath(prize.imagePath)) &&
     Number.isInteger(prize.startingQuantity) &&
     prize.startingQuantity >= 0 &&
     prize.startingQuantity <= 1000000 &&
@@ -112,5 +132,12 @@ export function copyStockPrize(prize: StockPrize): StockPrize {
     cardmarketUrl: prize.cardmarketUrl,
     marketPriceEur: prize.marketPriceEur,
     marketCheckedAt: prize.marketCheckedAt,
+    ...(prize.specialEvent === undefined
+      ? {}
+      : { specialEvent: prize.specialEvent }),
+    ...(prize.availability === undefined
+      ? {}
+      : { availability: prize.availability }),
+    ...(prize.imagePath === undefined ? {} : { imagePath: prize.imagePath }),
   };
 }

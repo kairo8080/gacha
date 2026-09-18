@@ -145,8 +145,10 @@ export function getStockCatalog(state: DemoState): StockPrize[] {
 export function getMachines(state: DemoState): Machine[] {
   return machines.map((machine) => ({
     ...machine,
-    prizes: getStockCatalog(state).filter((prize) =>
-      prize.machineIds.includes(machine.id),
+    prizes: getStockCatalog(state).filter(
+      (prize) =>
+        (prize.availability ?? "active") === "active" &&
+        prize.machineIds.includes(machine.id),
     ),
   }));
 }
@@ -196,12 +198,17 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
     ) {
       return state;
     }
-    if (remainingStock(state, machine.prizes[action.prizeIndex].id) === 0) {
+    const selectedPrize = machine.prizes[action.prizeIndex];
+    if (
+      (selectedPrize.availability ?? "active") !== "active" ||
+      !selectedPrize.machineIds.includes(machine.id) ||
+      remainingStock(state, selectedPrize.id) === 0
+    ) {
       return state;
     }
     const item: InventoryItem = {
       id: action.itemId,
-      prize: copyStockPrize(machine.prizes[action.prizeIndex]),
+      prize: copyStockPrize(selectedPrize),
       machineId: machine.id,
       status: "held",
       createdAt: action.createdAt,
@@ -352,8 +359,8 @@ export function parseSavedState(raw: string | null): DemoState {
         const legacy = legacyStockCatalog.find(
           (row) => row.id === rawPrize.id && row.machineId === item.machineId,
         );
-        if (current && samePrize(rawPrize, current))
-          prize = copyStockPrize(current);
+        if (current && isStockPrize(rawPrize) && samePrize(rawPrize, current))
+          prize = copyStockPrize(rawPrize);
         else if (legacy && samePrize(rawPrize, legacy)) {
           prize = {
             id: legacy.id,
@@ -435,6 +442,12 @@ function samePrize(saved: Record<string, unknown>, prize: Prize): boolean {
         saved.setId === (prize as StockPrize).setId &&
         saved.cardmarketUrl === (prize as StockPrize).cardmarketUrl &&
         saved.marketPriceEur === (prize as StockPrize).marketPriceEur &&
-        saved.marketCheckedAt === (prize as StockPrize).marketCheckedAt))
+        saved.marketCheckedAt === (prize as StockPrize).marketCheckedAt &&
+        (saved.specialEvent ?? false) ===
+          ((prize as StockPrize).specialEvent ?? false) &&
+        (saved.availability ?? "active") ===
+          ((prize as StockPrize).availability ?? "active") &&
+        (saved.imagePath ?? null) ===
+          ((prize as StockPrize).imagePath ?? null)))
   );
 }

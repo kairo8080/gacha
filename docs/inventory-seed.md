@@ -41,3 +41,11 @@ The inline admin editor stores an optional Cardmarket product URL, manually chec
 All edits and statistics are local to the current browser origin and synchronize across its tabs. They are not shared server configuration or authenticated commercial inventory. Localhost and the deployed Vercel site have separate sessions.
 
 Exact warehouse counts remain in ignored `.local/private-inventory/` files and are never imported into public fixtures. No real stock, payments, or fulfillment are represented by this catalog.
+
+## Ticket v0.1.0-22 — desktop stock table
+
+The full-width table exposes item type, amount per reward, total units, reservations, remaining units, and separate Common/Rare/Epic/Event assignments. Filters and sort controls act on this shared catalog. Edits expand within the table; no permanent side panel or popup is used.
+
+The event flag is independent of the three public machines. An event-only item stays outside their draw pools until assigned to a public machine. Paused and retired items are also excluded; zero remaining stock prevents a draw automatically. Refilling or reactivating an item preserves previous reservations and historical award values. Retiring a listing retains its history.
+
+Product photos use reviewed files in `public/products/`. Bundles share their pack image; missing images display a placeholder. See `docs/product-images.md` for filenames and `docs/product-image-sources.md` for source attribution. These additions preserve older v5 sessions without a storage reset.

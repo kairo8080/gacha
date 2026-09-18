@@ -8,6 +8,10 @@ export type StockPrize = Prize & {
   cardmarketUrl: string | null;
   marketPriceEur: number | null;
   marketCheckedAt: string | null;
+  /** Absent metadata retains the original v5 defaults: false, active, and null. */
+  specialEvent?: boolean;
+  availability?: "active" | "paused" | "retired";
+  imagePath?: string | null;
 };
 
 /** Public fictional values, unrelated to warehouse quantities or market prices. */

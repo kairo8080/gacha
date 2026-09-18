@@ -1,4 +1,4 @@
-# Gacha Arcade — v0.1.9
+# Gacha Arcade — v0.1.10
 
 A local, simulated Lorcana collectible arcade using the owner's original pixel art. Built with Next.js, TypeScript, and React; fonts and artwork are served locally.
 
@@ -11,11 +11,11 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. Admin login requires the server-only variables documented in `.env.example`; no wallet or payment credentials are used.
 
-## Current release: v0.1.9
+## Current release: v0.1.10
 
 The visible release label is sourced from the `version` field in `package.json`; the npm lockfile and UI must stay synchronized with it. Every completed update increments the patch version once, records a matching version commit, creates an annotated immutable Git tag, publishes a matching GitHub release, pushes the commit and tag to the configured repository's default branch, and verifies the deployed Vercel version. Previous tags and releases remain available for rollback by redeploying a tag or reverting as a new version; never force-push or rewrite tags. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
 
-Current iteration: **v0.1.9 — Ghost catalog and compact editor**. The next routine update will be **v0.1.10**; the next larger milestone will be **v0.2.0**.
+Current iteration: **v0.1.10 — Desktop stock management**. The next routine update will be **v0.1.11**; the next larger milestone will be **v0.2.0**.
 
 The public `/dev` route is an annotated working arcade for review. It is explicitly simulated, marked `noindex`, and contains no admin data or credentials, private stock counts, or real payments. Its browser-local demo wallet and collection follow the main simulation. UI-region labels A01–A24 update across machine, pull, result, and collection states; the label toggle is available below the hero. The extra demo/subheader and introductory copy were removed; the demo note and reset control live in the top header. Scene sizing is responsive, and the character’s tallest idle pose is sized to two-thirds of the machine’s visible artwork height after accounting for transparent sprite margins; its natural idle bob is unchanged.
 
@@ -23,7 +23,7 @@ The public `/dev` route is an annotated working arcade for review. It is explici
 
 The simulation uses the fictional Ghost catalog and draws reward units from the configured SKU ledger. The legacy 14-set sample fixture remains documented for ticket 11 compatibility. Draws reserve one reward unit; demo resale returns it, while keeping and shipping previews leave it reserved. Stock and credits are local to each browser. See `docs/inventory-seed.md` for the fixture, catalog, and simulation rules.
 
-The Ghost editor uses a compact inline list and form. Its official set numbering is #01–#14; Whispers in the Well is #10 and Winterspell is #11. The catalog contains 60 fictional English reward SKUs, each seeded at 100 fictional units (6,000 units total): each of the 14 sets has 1-pack, 2-pack, 3-pack, and box entries, plus D23 Collection 2026 limited foil English, sample PSA 9, sample PSA 10, and mystery entries. The shared SKU ledger may serve multiple machine IDs and tiers. One bundle or box is one reward unit; the simulation never converts physical packs into cards or other units.
+The full-width desktop admin has header navigation and a sortable, filterable Ghost Stock table. An inline row editor replaces the permanent side panel. Dedicated Common/Rare/Epic/Event columns support overlapping assignments; item type, amount, total stock, reserved, available, values and status stay visible together. Its official set numbering is #01–#14; Whispers in the Well is #10 and Winterspell is #11. The catalog contains 60 fictional English reward SKUs, each seeded at 100 fictional units (6,000 units total): each of the 14 sets has 1-pack, 2-pack, 3-pack, and box entries, plus D23 Collection 2026 limited foil English, sample PSA 9, sample PSA 10, and mystery entries. The shared SKU ledger may serve multiple machine IDs and tiers. One bundle or box is one reward unit; the simulation never converts physical packs into cards or other units.
 
 Draws use the catalog. Price and value edits are browser-local and synchronize across tabs; old awards retain the price and value snapshots recorded when awarded. Cardmarket English URLs and EUR prices are manual references with a checked date, independent of CR; there is no live feed, and access may return 403. Prices default to unset. The `/en` interface alone does not prove the product is English; admin confirmation is required.
 
@@ -80,3 +80,5 @@ The intended GitHub repository is `https://github.com/kairo8080/gacha`. Push the
 - A purchased domain is optional; Vercel provides generated `.vercel.app` addresses.
 
 `vercel.json` declares the Next.js framework. All behavior remains simulated when deployed. Original editing/reference exports under `pixelart/` are optional for running the app; its required artwork is copied under `public/pixelart/`.
+
+Product photos live in public/products/. The admin uses actual available files and marks missing photos clearly. See [the naming guide](docs/product-images.md) and [image sources](docs/product-image-sources.md). Paused, retired and empty products cannot be drawn; an event-only assignment is saved for future event setup. All stock and edits remain simulated and local to the browser.

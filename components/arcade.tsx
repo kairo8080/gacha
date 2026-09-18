@@ -190,11 +190,13 @@ export default function Arcade() {
   const pullLock = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const machines = getMachines(activeState);
-  const stockCatalog = getStockCatalog(activeState);
+  const stockCatalog = getStockCatalog(activeState).filter(
+    (prize) =>
+      (prize.availability ?? "active") === "active" &&
+      prize.machineIds.length > 0,
+  );
   const machine = machines.find((item) => item.id === selected)!;
-  const displayedStock = showAllStock
-    ? stockCatalog
-    : stockCatalog.filter((prize) => prize.machineIds.includes(selected));
+  const displayedStock = showAllStock ? stockCatalog : machine.prizes;
 
   useEffect(() => {
     return () => {

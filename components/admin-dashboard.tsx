@@ -11,6 +11,7 @@ import {
 import { useDemoSession } from "@/hooks/use-demo-session";
 import { useDemoPresence } from "@/hooks/use-demo-presence";
 import GhostStockEditor from "@/components/ghost-stock-editor";
+import { ProductImagesProvider } from "@/components/product-image";
 import {
   demoReducer,
   getMachines,
@@ -34,7 +35,11 @@ const sections: { id: Section; name: string }[] = [
   { id: "shipping", name: "Ship queue" },
 ];
 
-export default function AdminDashboard() {
+export default function AdminDashboard({
+  productImages = [],
+}: {
+  productImages?: string[];
+}) {
   const [session, setSession] = useState<Session | null>(null);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -245,30 +250,6 @@ export default function AdminDashboard() {
           </span>
           <small>{APP_VERSION}</small>
         </a>
-        <div className="admin-header-actions">
-          <a href="/">
-            PLAY ARCADE <ArrowRight size={16} />
-          </a>
-          <button onClick={logout} disabled={busy}>
-            SIGN OUT
-          </button>
-        </div>
-      </header>
-      <div className="admin-mode">
-        <span className="admin-dot" /> LOCAL SIMULATION{" "}
-        <span>THIS BROWSER · PLAY CREDITS</span>
-      </div>
-      <main className="admin-main">
-        <div className="admin-heading">
-          <div>
-            <span className="admin-kicker">PLAYER ONE / ADMIN</span>
-            <h1>THE CONTROL ROOM.</h1>
-          </div>
-          <span className="admin-live">
-            <span className="admin-dot" />{" "}
-            {ready ? "SESSION SYNCED" : "LOADING…"}
-          </span>
-        </div>
         <nav className="admin-nav" aria-label="Admin sections">
           {sections.map((tab) => (
             <button
@@ -285,6 +266,24 @@ export default function AdminDashboard() {
             </button>
           ))}
         </nav>
+        <div className="admin-header-actions">
+          <span className="admin-session-label">
+            <span className="admin-dot" />{" "}
+            {ready ? "DEMO · THIS BROWSER" : "LOADING…"}
+          </span>
+          <a href="/">
+            PLAY ARCADE <ArrowRight size={16} />
+          </a>
+          <button onClick={logout} disabled={busy}>
+            SIGN OUT
+          </button>
+        </div>
+      </header>
+      <main className="admin-main">
+        <h1 className="sr-only">
+          Gacha control room ·{" "}
+          {sections.find((tab) => tab.id === section)?.name}
+        </h1>
         {(error || storageWarning) && (
           <p className="admin-error" role="alert">
             {error || "Browser storage unavailable. Changes may not be saved."}
@@ -469,7 +468,9 @@ export default function AdminDashboard() {
         )}
 
         {section === "ghost" && (
-          <GhostStockEditor state={state} setState={setState} ready={ready} />
+          <ProductImagesProvider paths={productImages}>
+            <GhostStockEditor state={state} setState={setState} ready={ready} />
+          </ProductImagesProvider>
         )}
 
         {section === "physical" && (

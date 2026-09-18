@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  copyStockPrize,
+  isProductImagePath,
+  isStockPrize,
+} from "./ghost-stock.ts";
+import {
   demoReducer,
   initialState,
   machines,
@@ -452,6 +457,11 @@ test("invalid catalog edits and stock below reservations are rejected atomically
     { value: 100001 },
     { machineIds: ["common", "common"] },
     { machineIds: ["invalid"] },
+    { specialEvent: "true" },
+    { specialEvent: null },
+    { availability: "out-of-stock" },
+    { availability: null },
+    { imagePath: "https://example.test/product.png" },
     { setId: "unknown-set" },
     { cardmarketUrl: "https://evil.test/en/Lorcana/Products/Boosters/Sample" },
     { cardmarketUrl: "javascript:alert(1)" },
@@ -574,4 +584,189 @@ test("session reset clears wallet and reservations while retaining admin catalog
     pullSku(reset, seed.id, "rare", "after-reset").items[0].prize.value,
     31,
   );
+});
+
+test("special event assignment is independent and event-only stock cannot enter public draws", () => {
+  const seed = stockCatalog.find((prize) => prize.kind === "mystery")!;
+  let state = demoReducer(initialState, {
+    type: "save-stock",
+    prize: { ...seed, specialEvent: true, machineIds: [] },
+  });
+  assert.equal(
+    getStockCatalog(state).find((prize) => prize.id === seed.id)!.specialEvent,
+    true,
+  );
+  for (const machine of getMachines(state)) {
+    assert.equal(
+      machine.prizes.some((prize) => prize.id === seed.id),
+      false,
+    );
+    assert.equal(pullSku(state, seed.id, machine.id, "event-only"), state);
+    for (
+      let ticket = 0;
+      ticket < machineStock(state, machine.id);
+      ticket += 100
+    ) {
+      assert.notEqual(
+        machine.prizes[drawPrizeIndex(state, machine.id, ticket)].id,
+        seed.id,
+      );
+    }
+  }
+  state = demoReducer(state, {
+    type: "save-stock",
+    prize: { ...seed, specialEvent: true, machineIds: ["rare"] },
+  });
+  assert.equal(
+    pullSku(state, seed.id, "rare", "shared-event").items[0].prize.id,
+    seed.id,
+  );
+  assert.deepEqual(parseSavedState(JSON.stringify(state)), state);
+});
+
+test("paused and retired rows reject direct draws while old awards retain resale and stock", () => {
+  for (const availability of ["paused", "retired"] as const) {
+    const awarded = pulled();
+    const state: DemoState = {
+      ...awarded,
+      stockCatalog: stockCatalog.map((prize) => ({ ...prize, availability })),
+    };
+    for (const machine of getMachines(state)) {
+      assert.equal(machine.prizes.length, 0);
+      assert.equal(machineStock(state, machine.id), 0);
+      assert.equal(drawPrizeIndex(state, machine.id, 0), -1);
+      assert.equal(
+        demoReducer(state, {
+          type: "pull",
+          machineId: machine.id,
+          itemId: "blocked",
+          prizeIndex: 0,
+          createdAt: awardedAt,
+        }),
+        state,
+      );
+    }
+    const restored = parseSavedState(JSON.stringify(state));
+    assert.deepEqual(restored, state);
+    const sold = demoReducer(restored, { type: "sell", itemId: "item-1" });
+    assert.equal(sold.balance, restored.balance + 6.4);
+    assert.equal(remainingStock(sold, awarded.items[0].prize.id), 100);
+    assert.equal(machineStock(sold, "common"), 0);
+  }
+});
+
+test("refilling exhausted shared stock survives reload without changing historical awards", () => {
+  const seed = stockCatalog.find((prize) => prize.kind === "box")!;
+  let state = demoReducer(initialState, {
+    type: "save-stock",
+    prize: { ...seed, startingQuantity: 1 },
+  });
+  state = pullSku(state, seed.id, "common", "last-box");
+  assert.equal(remainingStock(state, seed.id), 0);
+  assert.equal(pullSku(state, seed.id, "rare", "empty"), state);
+  state = parseSavedState(JSON.stringify(state));
+  state = demoReducer(state, {
+    type: "save-stock",
+    prize: {
+      ...seed,
+      startingQuantity: 3,
+      imagePath: "/products/sample-box.webp",
+      availability: "active",
+    },
+  });
+  const restored = parseSavedState(JSON.stringify(state));
+  assert.deepEqual(restored, state);
+  assert.equal(remainingStock(restored, seed.id), 2);
+  assert.equal("imagePath" in restored.items[0].prize, false);
+  const next = pullSku(restored, seed.id, "rare", "refilled-box");
+  assert.equal(remainingStock(next, seed.id), 1);
+  assert.equal(next.items.length, 2);
+  assert.deepEqual(parseSavedState(JSON.stringify(next)), next);
+});
+
+test("product image references permit only safe local product filenames", () => {
+  const seed = stockCatalog[0];
+  for (const imagePath of [
+    "/products/sample.webp",
+    "/products/sample-box.png",
+    "/products/box_2.jpg",
+    "/products/14.jpeg",
+  ]) {
+    assert.equal(isProductImagePath(imagePath), true);
+    assert.equal(isStockPrize({ ...seed, imagePath }), true);
+    assert.equal(copyStockPrize({ ...seed, imagePath }).imagePath, imagePath);
+  }
+  for (const imagePath of [
+    "https://example.test/products/box.png",
+    "//example.test/products/box.png",
+    "/products/../box.png",
+    "/products/%2e%2e/box.png",
+    "/products/nested/box.png",
+    "/products/box.png?size=2",
+    "/products/box.png#x",
+    "/products/box.svg",
+    "/products/Box.png",
+    "/products/box.PNG",
+    "/products/.box.png",
+    "/products/box..png",
+    "/products/box\\other.png",
+    "/products/box.png\n",
+    "",
+    42,
+  ]) {
+    assert.equal(isProductImagePath(imagePath), false, String(imagePath));
+    assert.equal(
+      isStockPrize({ ...seed, imagePath }),
+      false,
+      String(imagePath),
+    );
+  }
+  assert.equal(isStockPrize({ ...seed, imagePath: null }), true);
+});
+
+test("v5 sessions without additive metadata round-trip with and without a saved catalog", () => {
+  const historical = pulled();
+  for (const state of [
+    historical,
+    { ...historical, stockCatalog: stockCatalog.map(copyStockPrize) },
+  ]) {
+    assert.equal("specialEvent" in state.items[0].prize, false);
+    assert.equal("availability" in state.items[0].prize, false);
+    assert.equal("imagePath" in state.items[0].prize, false);
+    assert.deepEqual(parseSavedState(JSON.stringify(state)), state);
+  }
+  const explicitDefaults = {
+    ...historical,
+    items: historical.items.map((item) => ({
+      ...item,
+      prize: {
+        ...item.prize,
+        specialEvent: false,
+        availability: "active",
+        imagePath: null,
+      },
+    })),
+  };
+  assert.deepEqual(
+    parseSavedState(JSON.stringify(explicitDefaults)),
+    explicitDefaults,
+  );
+  for (const patch of [
+    { specialEvent: true },
+    { availability: "paused" },
+    { imagePath: "/products/changed.png" },
+  ]) {
+    assert.equal(
+      parseSavedState(
+        JSON.stringify({
+          ...historical,
+          items: historical.items.map((item) => ({
+            ...item,
+            prize: { ...item.prize, ...patch },
+          })),
+        }),
+      ),
+      initialState,
+    );
+  }
 });

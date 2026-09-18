@@ -33,12 +33,12 @@ import {
   resaleValue,
   type InventoryItem,
   type MachineId,
-  type Prize,
 } from "@/lib/demo";
 import { getLiveMachineOdds, samplePrizeIndex } from "@/lib/odds";
 import { APP_VERSION } from "@/lib/version";
 import { useDemoSession } from "@/hooks/use-demo-session";
 import { useDemoPresence } from "@/hooks/use-demo-presence";
+import ProductImage from "@/components/product-image";
 import { PlayerInventory } from "@/components/player-inventory";
 
 const credits = (value: number) =>
@@ -68,28 +68,6 @@ function MachineSprite({
       }}
     />
   );
-}
-
-export function PrizeSymbol({ prize }: { prize: Prize }) {
-  const typeLabel = prizeTypeLabel(prize);
-  return (
-    <div className={`prize-symbol ${prize.kind}`} aria-hidden="true">
-      {prize.kind === "graded" ? <ShieldCheck /> : <Package />}
-      <span>{typeLabel}</span>
-      <small className="prize-set-badge">{prize.name}</small>
-    </div>
-  );
-}
-
-function prizeTypeLabel(prize: Prize) {
-  if (prize.kind === "pack")
-    return prize.packCount === 1 ? "1 PACK" : `${prize.packCount} PACKS`;
-  if (prize.kind === "box") return "BOX";
-  if (prize.kind === "collection")
-    return prize.name.toUpperCase().includes("D23") ? "D23" : "COLLECTION";
-  if (prize.kind === "graded")
-    return prize.grade?.replace(/\s+/g, "") ?? "GRADED";
-  return "MYSTERY";
 }
 
 function ClawSequence({ id }: { id: MachineId }) {
@@ -394,7 +372,8 @@ export default function Arcade() {
                   key={prize.id}
                   style={{ "--tier-color": accents[tier] } as CSSProperties}
                 >
-                  <div>
+                  <ProductImage prize={prize} className="pool-product-photo" />
+                  <div className="pool-stock-copy">
                     <h3>{prize.name}</h3>
                     <span>
                       {prize.detail} · {left} available ·{" "}
@@ -527,7 +506,11 @@ export default function Arcade() {
               } as CSSProperties
             }
           >
-            <PrizeSymbol prize={activeResult.prize} />
+            <ProductImage
+              prize={activeResult.prize}
+              className="result-product-photo"
+              size={112}
+            />
             <span className="tier-badge">
               {activeResult.machineId.toUpperCase()} MACHINE
             </span>

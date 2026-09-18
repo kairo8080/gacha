@@ -136,6 +136,23 @@
   border-left: 3px solid var(--tier-color);
   background: #192842;
 }
+.pool-stock-row > .pool-product-photo {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  display: inline-grid;
+}
+.pool-stock-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pool-stock-row .product-image-missing {
+  display: flex;
+}
+.pool-stock-row .product-image-missing small {
+  font-size: 8px;
+}
 .pool-stock-row h3 {
   font-size: 21px;
   line-height: 1;
@@ -182,16 +199,16 @@
   padding: 12px;
   margin: 8px 0 12px;
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-columns: 96px minmax(0, 1fr);
   column-gap: 14px;
   text-align: left;
   align-items: center;
 }
-.inline-panel-body .result-prize > .prize-symbol {
+.inline-panel-body .result-prize > .result-product-photo {
   grid-row: 1 / 5;
-  width: 64px;
+  width: 96px;
   min-width: 0;
-  height: 92px;
+  height: 112px;
   margin: 0;
 }
 .inline-panel-body .result-prize .prize-set-badge {

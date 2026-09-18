@@ -10,6 +10,7 @@ import {
   type SetStateAction,
 } from "react";
 import { Check, Package, RotateCcw, Truck } from "@/components/pixel-icons";
+import ProductImage from "@/components/product-image";
 import {
   demoReducer,
   getShippingStage,
@@ -214,11 +215,18 @@ export function PlayerInventory({
         </div>
         {best && (
           <div className="best-pull">
-            <span>BEST PULL</span>
-            <strong>
-              {credits(best.prize.value)} <small>CR</small>
-            </strong>
-            <b>{best.prize.name}</b>
+            <ProductImage
+              prize={best.prize}
+              className="best-pull-photo"
+              size={44}
+            />
+            <div className="best-pull-copy">
+              <span>BEST PULL</span>
+              <strong>
+                {credits(best.prize.value)} <small>CR</small>
+              </strong>
+              <b>{best.prize.name}</b>
+            </div>
           </div>
         )}
       </div>
@@ -338,12 +346,15 @@ export function PlayerInventory({
                     {statusLabel(item, demoDay)}
                   </span>
                 </header>
-                <div
-                  className={`collection-symbol ${item.prize.kind}`}
-                  aria-hidden="true"
-                >
-                  <Package size={28} />
-                  <span>{prizeTypeLabel(item)}</span>
+                <div className={`collection-product-frame ${item.prize.kind}`}>
+                  <ProductImage
+                    prize={item.prize}
+                    className="collection-product-photo"
+                    size={58}
+                  />
+                  <span className="collection-product-kind">
+                    {prizeTypeLabel(item)}
+                  </span>
                 </div>
                 <span className="collection-value">
                   {credits(item.prize.value)} <small>CR</small>

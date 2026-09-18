@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.13 — 2026-09-18
+
+- Added shared product photos to the player prize pool, inline pull reveal, collection/history cards and best-pull summary, including the `/dev` review route.
+- Kept the pixel framing, compact layouts and honest missing-photo placeholders. Pack bundles use pack artwork; boxes use box artwork.
+- Reused a prerendered public-file manifest across player and admin pages. Historical pulls resolve their saved photo/set identity, with compatibility for old single-pack awards.
+
+- Verified typecheck, all 58 tests, production build, desktop/phone reveal and collection layouts, `/dev`, and admin image loading.
+
 ## v0.1.12 — 2026-09-18
 
 - Added the owner's 14 English booster-box product photos to Ghost Stock List and Cards views, matched to sets #01–#14.

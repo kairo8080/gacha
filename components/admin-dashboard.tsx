@@ -12,7 +12,6 @@ import { useDemoSession } from "@/hooks/use-demo-session";
 import { useDemoPresence } from "@/hooks/use-demo-presence";
 import GhostStockEditor from "@/components/ghost-stock-editor";
 import OddsCalculator from "@/components/odds-calculator";
-import { ProductImagesProvider } from "@/components/product-image";
 import {
   demoReducer,
   getMachines,
@@ -37,11 +36,7 @@ const sections: { id: Section; name: string }[] = [
   { id: "shipping", name: "Ship queue" },
 ];
 
-export default function AdminDashboard({
-  productImages = [],
-}: {
-  productImages?: string[];
-}) {
+export default function AdminDashboard() {
   const [session, setSession] = useState<Session | null>(null);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -486,9 +481,7 @@ export default function AdminDashboard({
         )}
 
         {section === "ghost" && (
-          <ProductImagesProvider paths={productImages}>
-            <GhostStockEditor state={state} setState={setState} ready={ready} />
-          </ProductImagesProvider>
+          <GhostStockEditor state={state} setState={setState} ready={ready} />
         )}
 
         {section === "odds" && (

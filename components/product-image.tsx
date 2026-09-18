@@ -3,8 +3,10 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { Package } from "@/components/pixel-icons";
-import type { StockPrize } from "@/lib/catalog";
-import { resolveProductImagePath } from "@/lib/product-images";
+import {
+  resolveProductImagePath,
+  type ProductImagePrize,
+} from "@/lib/product-images";
 
 const ProductImagesContext = createContext<readonly string[]>([]);
 
@@ -27,7 +29,7 @@ export default function ProductImage({
   className = "",
   size = 48,
 }: {
-  prize: StockPrize;
+  prize: ProductImagePrize;
   className?: string;
   size?: number;
 }) {

@@ -27,7 +27,7 @@ Each set also has separate 2-pack and 3-pack bundles assigned to Common/Rare, pl
 
 - Each pull awards one reward unit. One bundle, sealed box, or graded card counts once. The simulation does not open boxes or convert them to loose packs.
 - One product ID may appear in multiple machines, sharing one stock/reservation ledger. Machine totals overlap; summing them would double-count shared products.
-- Probability equals a product's remaining reward units divided by the selected machine's remaining reward units. Empty products cannot be awarded or charged for. Odds shown in the UI are rounded.
+- In stock-odds mode, probability equals a product's remaining reward units divided by the selected machine's remaining reward units. Tuned mode uses the reviewed Odds Lab plan, recalculated for the current stock. Empty products cannot be awarded or charged for. Odds shown in the UI are rounded.
 - Held, redeemed, queued, and shipping rewards remain reserved. Selling a held reward returns one unit once and credits 80% of its original demo value.
 - Pulls cost 10 / 25 / 60 CR. Demo values are fictional; EUR references do not convert into credits.
 - Admins can add prizes and edit names, types, sets, quantities, values, and any combination of machines. No machine assignment pauses a product. Quantities cannot be reduced below current reservations.
@@ -36,7 +36,7 @@ Each set also has separate 2-pack and 3-pack bundles assigned to Common/Rare, pl
 
 ## Cardmarket and persistence
 
-The inline admin editor stores an optional Cardmarket product URL, manually checked EUR reference, and check date. EUR prices start unset. Recording a new price requires confirmation that the admin checked **English listings**. Cardmarket's `/en/` interface is not proof of an English product edition. There is no live price feed or automatic price refresh.
+The inline admin editor stores an optional Cardmarket product URL, VK market value in EUR, and update date. EK is the internal purchase cost in EUR. Both amounts are for one complete reward unit, including a whole bundle when applicable, and start unset. Manual VK does not require a URL; recording a Cardmarket-backed quote requires confirmation that the admin checked **English listings**. Cardmarket's `/en/` interface is not proof of an English product edition. There is no live price feed or automatic price refresh.
 
 All edits and statistics are local to the current browser origin and synchronize across its tabs. They are not shared server configuration or authenticated commercial inventory. Localhost and the deployed Vercel site have separate sessions.
 
@@ -49,3 +49,15 @@ The full-width table exposes item type, amount per reward, total units, reservat
 The event flag is independent of the three public machines. An event-only item stays outside their draw pools until assigned to a public machine. Paused and retired items are also excluded; zero remaining stock prevents a draw automatically. Refilling or reactivating an item preserves previous reservations and historical award values. Retiring a listing retains its history.
 
 Product photos use reviewed files in `public/products/`. Bundles share their pack image; missing images display a placeholder. See `docs/product-images.md` for filenames and `docs/product-image-sources.md` for source attribution. These additions preserve older v5 sessions without a storage reset.
+
+## Ticket v0.1.0-23 — costs, card view and odds planning
+
+Each machine has an optional EUR planning price, target edge (initially 15%), expense per pull and enabled flag. These EUR inputs do not change or convert the arcade's illustrative 10/25/60 credit charges. The public fixture contains no assumed EK or VK values.
+
+The calculator starts with remaining-unit stock weights and applies an exponential tilt based on `max(EK, VK)` per reward. It finds the smallest tilt in that conservative family whose expected liability is at most `price × (1 − targetEdge) − expense`. The resulting plan therefore constrains both expected purchase cost and market payout. Expected profit is `price − expense − E[EK]`; the displayed market-based house edge is `(price − expense − E[VK]) / price`; market RTP is `E[VK] / price`. This is a forecast over many pulls, not a guarantee on an individual pull, and excludes expenses not entered.
+
+Applying a valid plan enables those odds in the simulation. Every eligible reward retains a representable chance, and the same function supplies sampling, admin percentages and player percentages. Missing EK/VK, depleted cheap stock, an impossible target or an unrepresentable probability pauses tuned draws rather than silently reverting to unprotected odds. These checks repeat before each pull; there is no player-specific adjustment. Stock-odds mode remains available explicitly and does not claim a house edge. Event assignments are not a fourth machine.
+
+Costs, manual prices and odds settings remain local to the browser origin. Reset preserves configured settings. Historical award values and resale credits remain unchanged by repricing. Card and list views share filters, ordering, stock and inline editing.
+
+Cooperating browser tabs serialize session commits with Web Locks and compare their persisted base before writing. A stale save is rejected and the newer session is restored with an inline notice; it cannot silently replace newer prices, odds or awards. Browsers without Web Locks show a best-effort synchronization notice. This remains a local simulation, not a multi-user inventory backend.

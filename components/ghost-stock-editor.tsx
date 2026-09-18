@@ -24,6 +24,7 @@ import {
   isProductImagePath,
 } from "@/lib/ghost-stock";
 import { expectedProductImagePath } from "@/lib/product-images";
+import { getLiveMachineOdds } from "@/lib/odds";
 
 const tiers: MachineId[] = ["common", "rare", "epic"];
 const formats = [
@@ -49,10 +50,19 @@ type Draft = {
   quantity: string;
   value: string;
   marketPrice: string;
+  buyCost: string;
   confirmedEnglish: boolean;
 };
 type SortKey =
-  "name" | "set" | "type" | "amount" | "total" | "available" | "value";
+  | "name"
+  | "set"
+  | "type"
+  | "amount"
+  | "total"
+  | "available"
+  | "value"
+  | "buyCost"
+  | "marketPrice";
 const number = (value: number) =>
   new Intl.NumberFormat("en", { maximumFractionDigits: 2 }).format(value);
 const setNumber = (prize: StockPrize) =>
@@ -106,6 +116,10 @@ function draftOf(prize: StockPrize, base: string | null): Draft {
     value: String(prize.value),
     marketPrice:
       prize.marketPriceEur === null ? "" : String(prize.marketPriceEur),
+    buyCost:
+      editor.buyCostEur === null || editor.buyCostEur === undefined
+        ? ""
+        : String(editor.buyCostEur),
     confirmedEnglish: false,
   };
 }
@@ -125,6 +139,7 @@ export default function GhostStockEditor({
   const [format, setFormat] = useState("all");
   const [machine, setMachine] = useState("all");
   const [stockStatus, setStockStatus] = useState("all");
+  const [view, setView] = useState<"table" | "cards">("table");
   const [sort, setSort] = useState<{
     key: SortKey;
     direction: "ascending" | "descending";
@@ -169,6 +184,8 @@ export default function GhostStockEditor({
           total: prize.startingQuantity,
           available: remainingStock(state, prize.id),
           value: prize.value,
+          buyCost: prize.buyCostEur ?? -1,
+          marketPrice: prize.marketPriceEur ?? -1,
         })[sort.key];
       const aa = value(a);
       const bb = value(b);
@@ -238,6 +255,7 @@ export default function GhostStockEditor({
         cardmarketUrl: null,
         marketPriceEur: null,
         marketCheckedAt: null,
+        buyCostEur: null,
         specialEvent: false,
         availability: "active",
         imagePath: null,
@@ -287,6 +305,7 @@ export default function GhostStockEditor({
       value = Number(draft.value),
       marketPriceEur =
         draft.marketPrice.trim() === "" ? null : Number(draft.marketPrice),
+      buyCostEur = draft.buyCost.trim() === "" ? null : Number(draft.buyCost),
       cardmarketUrl = draft.prize.cardmarketUrl?.trim() || null,
       imagePath = draft.prize.imagePath?.trim() || null,
       reserved = reservedFor(state, draft.prize.id);
@@ -331,16 +350,23 @@ export default function GhostStockEditor({
         marketPriceEur > 100_000)
     )
       return setError(
-        "Enter a EUR reference price from 0 to 100,000, or leave it blank.",
+        "Enter a VK EUR value from 0 to 100,000, or leave it blank.",
+      );
+    if (
+      buyCostEur !== null &&
+      (!Number.isFinite(buyCostEur) || buyCostEur < 0 || buyCostEur > 100_000)
+    )
+      return setError(
+        "Enter an EK EUR cost from 0 to 100,000, or leave it blank.",
       );
     if (
       marketPriceEur !== null &&
-      (!cardmarketUrl ||
-        ((quoteChanged || !current?.marketCheckedAt) &&
-          !draft.confirmedEnglish))
+      cardmarketUrl &&
+      (quoteChanged || !current?.marketCheckedAt) &&
+      !draft.confirmedEnglish
     )
       return setError(
-        "Add the product link and confirm you checked English listings before recording a EUR price.",
+        "Confirm English listings before recording a Cardmarket-backed VK EUR quote.",
       );
     const prize = copyStockPrize({
       ...draft.prize,
@@ -351,10 +377,11 @@ export default function GhostStockEditor({
       value,
       cardmarketUrl,
       marketPriceEur,
+      buyCostEur,
       marketCheckedAt:
         marketPriceEur === null
           ? null
-          : draft.confirmedEnglish
+          : quoteChanged
             ? new Date().toISOString()
             : (current?.marketCheckedAt ?? null),
     } as StockPrize) as EditorPrize;
@@ -405,280 +432,300 @@ export default function GhostStockEditor({
       </button>
     </th>
   );
-  function renderFormRow() {
+  function renderEditorForm() {
     return !draft ? null : (
-      <tr className="ghost-editor-row">
-        <td colSpan={16}>
-          <form className="ghost-inline-form" onSubmit={save}>
-            <div className="ghost-edit-heading">
-              <h3>
-                {draft.base === null
-                  ? "NEW PRIZE"
-                  : `EDIT · ${draft.prize.name || "UNTITLED"}`}
-              </h3>
-              <span className="ghost-en">EN ONLY</span>
-            </div>
-            <div className="ghost-form-fields">
-              <label>
-                NAME
-                <input
-                  aria-label="Prize name"
-                  value={draft.prize.name}
-                  maxLength={160}
-                  required
-                  onChange={(event) => update({ name: event.target.value })}
-                />
-              </label>
-              <label>
-                SET
-                <select
-                  aria-label="Prize set"
-                  value={draft.prize.setId ?? ""}
-                  onChange={(event) =>
-                    update({ setId: event.target.value || null })
-                  }
-                >
-                  <option value="">PROMO / CUSTOM</option>
-                  {setCatalog.map((set) => (
-                    <option key={set.id} value={set.id}>
-                      #{String(set.number).padStart(2, "0")} {set.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                TYPE
-                <select
-                  aria-label="Prize type"
-                  value={formatOf(draft.prize)}
-                  onChange={(event) =>
-                    changeFormat(event.target.value as Format)
-                  }
-                >
-                  {formats.map(([id, label]) => (
-                    <option key={id} value={id}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                DETAIL
-                <input
-                  aria-label="Prize detail"
-                  value={draft.prize.detail}
-                  maxLength={240}
-                  required
-                  onChange={(event) => update({ detail: event.target.value })}
-                />
-              </label>
-              <label>
-                TOTAL REWARD UNITS
-                <input
-                  aria-label="Total reward units"
-                  type="number"
-                  min={reservedFor(state, draft.prize.id)}
-                  max="1000000"
-                  step="1"
-                  required
-                  value={draft.quantity}
-                  onChange={(event) =>
-                    setDraft({ ...draft, quantity: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                DEMO VALUE · CR
-                <input
-                  aria-label="Demo value in credits"
-                  type="number"
-                  min="0"
-                  max="100000"
-                  step="0.01"
-                  required
-                  value={draft.value}
-                  onChange={(event) =>
-                    setDraft({ ...draft, value: event.target.value })
-                  }
-                />
-              </label>
-              <fieldset className="ghost-tier-picker">
-                <legend>MACHINES · SELECT ANY</legend>
-                {tiers.map((id) => (
-                  <label key={id} className={`admin-tier ${id}`}>
-                    <input
-                      type="checkbox"
-                      checked={draft.prize.machineIds.includes(id)}
-                      onChange={(event) =>
-                        update({
-                          machineIds: tiers.filter((tierId) =>
-                            tierId === id
-                              ? event.target.checked
-                              : draft.prize.machineIds.includes(tierId),
-                          ),
-                        })
-                      }
-                    />
-                    {id}
-                  </label>
-                ))}
-              </fieldset>
-              <label>
-                AVAILABILITY
-                <select
-                  value={availabilityOf(draft.prize)}
-                  onChange={(event) =>
-                    update({ availability: event.target.value as Availability })
-                  }
-                >
-                  <option value="active">ACTIVE</option>
-                  <option value="paused">PAUSED</option>
-                  <option value="retired">RETIRED</option>
-                </select>
-              </label>
-              <label className="ghost-event-check">
+      <form className="ghost-inline-form" onSubmit={save}>
+        <div className="ghost-edit-heading">
+          <h3>
+            {draft.base === null
+              ? "NEW PRIZE"
+              : `EDIT · ${draft.prize.name || "UNTITLED"}`}
+          </h3>
+          <span className="ghost-en">EN ONLY</span>
+        </div>
+        <div className="ghost-form-fields">
+          <label>
+            NAME
+            <input
+              aria-label="Prize name"
+              value={draft.prize.name}
+              maxLength={160}
+              required
+              onChange={(event) => update({ name: event.target.value })}
+            />
+          </label>
+          <label>
+            SET
+            <select
+              aria-label="Prize set"
+              value={draft.prize.setId ?? ""}
+              onChange={(event) =>
+                update({ setId: event.target.value || null })
+              }
+            >
+              <option value="">PROMO / CUSTOM</option>
+              {setCatalog.map((set) => (
+                <option key={set.id} value={set.id}>
+                  #{String(set.number).padStart(2, "0")} {set.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            TYPE
+            <select
+              aria-label="Prize type"
+              value={formatOf(draft.prize)}
+              onChange={(event) => changeFormat(event.target.value as Format)}
+            >
+              {formats.map(([id, label]) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            DETAIL
+            <input
+              aria-label="Prize detail"
+              value={draft.prize.detail}
+              maxLength={240}
+              required
+              onChange={(event) => update({ detail: event.target.value })}
+            />
+          </label>
+          <label>
+            TOTAL REWARD UNITS
+            <input
+              aria-label="Total reward units"
+              type="number"
+              min={reservedFor(state, draft.prize.id)}
+              max="1000000"
+              step="1"
+              required
+              value={draft.quantity}
+              onChange={(event) =>
+                setDraft({ ...draft, quantity: event.target.value })
+              }
+            />
+          </label>
+          <label>
+            DEMO VALUE · CR / REWARD UNIT
+            <input
+              aria-label="Demo value in credits"
+              type="number"
+              min="0"
+              max="100000"
+              step="0.01"
+              required
+              value={draft.value}
+              onChange={(event) =>
+                setDraft({ ...draft, value: event.target.value })
+              }
+            />
+          </label>
+          <label>
+            EK EUR / REWARD UNIT
+            <input
+              aria-label="Internal buy cost in EUR per reward unit"
+              type="number"
+              min="0"
+              max="100000"
+              step="0.01"
+              placeholder="Not set"
+              value={draft.buyCost}
+              onChange={(event) =>
+                setDraft({ ...draft, buyCost: event.target.value })
+              }
+            />
+          </label>
+          <label>
+            VK EUR / REWARD UNIT
+            <input
+              aria-label="VK EUR current market value per reward unit"
+              type="number"
+              min="0"
+              max="100000"
+              step="0.01"
+              placeholder="Not set"
+              value={draft.marketPrice}
+              onChange={(event) =>
+                setDraft({
+                  ...draft,
+                  marketPrice: event.target.value,
+                  confirmedEnglish: false,
+                })
+              }
+            />
+          </label>
+          <fieldset className="ghost-tier-picker">
+            <legend>MACHINES · SELECT ANY</legend>
+            {tiers.map((id) => (
+              <label key={id} className={`admin-tier ${id}`}>
                 <input
                   type="checkbox"
-                  checked={eventOf(draft.prize)}
+                  checked={draft.prize.machineIds.includes(id)}
                   onChange={(event) =>
-                    update({ specialEvent: event.target.checked })
-                  }
-                />{" "}
-                EVENT REWARD
-              </label>
-              <label className="ghost-span-2">
-                IMAGE PATH
-                <input
-                  aria-label="Product image path"
-                  placeholder={expectedProductImagePath(draft.prize)}
-                  value={draft.prize.imagePath ?? ""}
-                  maxLength={240}
-                  onChange={(event) =>
-                    update({ imagePath: event.target.value || null })
+                    update({
+                      machineIds: tiers.filter((tierId) =>
+                        tierId === id
+                          ? event.target.checked
+                          : draft.prize.machineIds.includes(tierId),
+                      ),
+                    })
                   }
                 />
+                {id}
               </label>
-              <details
-                className="ghost-market-details ghost-span-2"
-                key={draft.prize.id}
-              >
-                <summary>
-                  CARDMARKET · EN ·{" "}
-                  {draft.marketPrice ? `€${draft.marketPrice}` : "NOT SET"}
-                </summary>
-                <div className="ghost-market-grid">
-                  <label className="ghost-span-2">
-                    PRODUCT LINK
-                    <input
-                      aria-label="Cardmarket product link"
-                      type="url"
-                      placeholder="https://www.cardmarket.com/en/Lorcana/Products/…"
-                      value={draft.prize.cardmarketUrl ?? ""}
-                      onChange={(event) => {
-                        update({ cardmarketUrl: event.target.value || null });
-                        setDraft((value) =>
-                          value ? { ...value, confirmedEnglish: false } : value,
-                        );
-                      }}
-                    />
-                  </label>
-                  <label>
-                    REFERENCE · EUR
-                    <input
-                      aria-label="Cardmarket reference in EUR"
-                      type="number"
-                      min="0"
-                      max="100000"
-                      step="0.01"
-                      placeholder="Not set"
-                      value={draft.marketPrice}
-                      onChange={(event) =>
-                        setDraft({
-                          ...draft,
-                          marketPrice: event.target.value,
-                          confirmedEnglish: false,
-                        })
-                      }
-                    />
-                  </label>
-                  <p>
-                    LAST CHECKED
-                    <br />
-                    <strong>
-                      {draft.prize.marketCheckedAt
-                        ? new Date(
-                            draft.prize.marketCheckedAt,
-                          ).toLocaleDateString("en-GB")
-                        : "NOT CHECKED"}
-                    </strong>
-                  </p>
-                  <label className="ghost-english-check ghost-span-2">
-                    <input
-                      type="checkbox"
-                      checked={draft.confirmedEnglish}
-                      onChange={(event) =>
-                        setDraft({
-                          ...draft,
-                          confirmedEnglish: event.target.checked,
-                        })
-                      }
-                    />
-                    I checked English listings only
-                  </label>
-                </div>
-              </details>
+            ))}
+          </fieldset>
+          <label>
+            AVAILABILITY
+            <select
+              value={availabilityOf(draft.prize)}
+              onChange={(event) =>
+                update({ availability: event.target.value as Availability })
+              }
+            >
+              <option value="active">ACTIVE</option>
+              <option value="paused">PAUSED</option>
+              <option value="retired">RETIRED</option>
+            </select>
+          </label>
+          <label className="ghost-event-check">
+            <input
+              type="checkbox"
+              checked={eventOf(draft.prize)}
+              onChange={(event) =>
+                update({ specialEvent: event.target.checked })
+              }
+            />{" "}
+            EVENT REWARD
+          </label>
+          <label className="ghost-span-2">
+            IMAGE PATH
+            <input
+              aria-label="Product image path"
+              placeholder={expectedProductImagePath(draft.prize)}
+              value={draft.prize.imagePath ?? ""}
+              maxLength={240}
+              onChange={(event) =>
+                update({ imagePath: event.target.value || null })
+              }
+            />
+          </label>
+          <details
+            className="ghost-market-details ghost-span-2"
+            key={draft.prize.id}
+          >
+            <summary>CARDMARKET REFERENCE · OPTIONAL</summary>
+            <div className="ghost-market-grid">
+              <label className="ghost-span-2">
+                PRODUCT LINK
+                <input
+                  aria-label="Cardmarket product link"
+                  type="url"
+                  placeholder="https://www.cardmarket.com/en/Lorcana/Products/…"
+                  value={draft.prize.cardmarketUrl ?? ""}
+                  onChange={(event) => {
+                    update({ cardmarketUrl: event.target.value || null });
+                    setDraft((value) =>
+                      value ? { ...value, confirmedEnglish: false } : value,
+                    );
+                  }}
+                />
+              </label>
+              <p>
+                VK UPDATED
+                <br />
+                <strong>
+                  {draft.prize.marketCheckedAt
+                    ? new Date(draft.prize.marketCheckedAt).toLocaleDateString(
+                        "en-GB",
+                      )
+                    : "NOT CHECKED"}
+                </strong>
+              </p>
+              <label className="ghost-english-check ghost-span-2">
+                <input
+                  type="checkbox"
+                  checked={draft.confirmedEnglish}
+                  onChange={(event) =>
+                    setDraft({
+                      ...draft,
+                      confirmedEnglish: event.target.checked,
+                    })
+                  }
+                />
+                I checked English Cardmarket listings
+              </label>
             </div>
-            {changedElsewhere && (
-              <p className="admin-error">
-                Updated in another tab.{" "}
-                <button
-                  type="button"
-                  className="ghost-inline-button"
-                  onClick={() => current && edit(current)}
-                >
-                  Reload prize
-                </button>
-              </p>
-            )}
-            {error && (
-              <p className="admin-error" role="alert">
-                {error}
-              </p>
-            )}
-            {notice && (
-              <p className="ghost-save-notice" role="status">
-                {notice}
-              </p>
-            )}
-            <div className="ghost-save-actions">
-              <button
-                className="admin-primary"
-                disabled={!ready || !!pending || changedElsewhere}
-              >
-                {pending ? "SAVING…" : "SAVE PRIZE"}
-              </button>
-              <button
-                className="admin-secondary"
-                type="button"
-                disabled={!!pending}
-                onClick={() => {
-                  setDraft(null);
-                  setError("");
-                  setNotice("");
-                }}
-              >
-                CANCEL
-              </button>
-              <small>
-                {reservedFor(state, draft.prize.id)} reserved · changes stay in
-                this browser
-              </small>
-            </div>
-          </form>
-        </td>
-      </tr>
+          </details>
+        </div>
+        {changedElsewhere && (
+          <p className="admin-error">
+            Updated in another tab.{" "}
+            <button
+              type="button"
+              className="ghost-inline-button"
+              onClick={() => current && edit(current)}
+            >
+              Reload prize
+            </button>
+          </p>
+        )}
+        {error && (
+          <p className="admin-error" role="alert">
+            {error}
+          </p>
+        )}
+        {notice && (
+          <p className="ghost-save-notice" role="status">
+            {notice}
+          </p>
+        )}
+        <div className="ghost-save-actions">
+          <button
+            className="admin-primary"
+            disabled={!ready || !!pending || changedElsewhere}
+          >
+            {pending ? "SAVING…" : "SAVE PRIZE"}
+          </button>
+          <button
+            className="admin-secondary"
+            type="button"
+            disabled={!!pending}
+            onClick={() => {
+              setDraft(null);
+              setError("");
+              setNotice("");
+            }}
+          >
+            CANCEL
+          </button>
+          <small>
+            {reservedFor(state, draft.prize.id)} reserved · changes stay in this
+            browser
+          </small>
+        </div>
+      </form>
     );
   }
+  const renderFormRow = () =>
+    draft ? (
+      <tr className="ghost-editor-row">
+        <td colSpan={17}>{renderEditorForm()}</td>
+      </tr>
+    ) : null;
+  const oddsLabel = (prizeId: string, tier: MachineId) => {
+    const row = getLiveMachineOdds(state, tier).rows.find(
+      (entry) => entry.prizeId === prizeId,
+    );
+    if (!row || !row.available) return "—";
+    if (row.probability > 0 && row.probability < 0.0001) return "<0.01%";
+    return `${number(row.probability * 100)}%`;
+  };
   return (
     <section
       className="admin-panel ghost-panel"
@@ -770,113 +817,312 @@ export default function GhostStockEditor({
             <option value="EVENT ONLY">EVENT ONLY</option>
           </select>
         </label>
+        <div className="ghost-view-toggle" aria-label="Stock editor view">
+          <button
+            type="button"
+            className={view === "table" ? "is-active" : undefined}
+            aria-pressed={view === "table"}
+            onClick={() => setView("table")}
+          >
+            LIST
+          </button>
+          <button
+            type="button"
+            className={view === "cards" ? "is-active" : undefined}
+            aria-pressed={view === "cards"}
+            onClick={() => setView("cards")}
+          >
+            CARDS
+          </button>
+        </div>
       </div>
-      <div ref={tableViewport} className="admin-table-wrap ghost-table-wrap">
-        <table className="admin-table ghost-table">
-          <thead>
-            <tr>
-              <th>PHOTO</th>
-              {sortHeader("set", "SET #")}
-              {sortHeader("name", "NAME")}
-              {sortHeader("type", "ITEM TYPE")}
-              {sortHeader("amount", "AMOUNT")}
-              {sortHeader("total", "TOTAL")}
-              <th>RESERVED</th>
-              {sortHeader("available", "AVAILABLE")}
-              {tiers.map((id) => (
-                <th key={id}>{id.toUpperCase()}</th>
+      {view === "cards" && (
+        <div className="ghost-card-order">
+          <label>
+            ORDER{" "}
+            <select
+              aria-label="Card sort"
+              value={sort.key}
+              onChange={(event) =>
+                setSort((current) => ({
+                  ...current,
+                  key: event.target.value as SortKey,
+                }))
+              }
+            >
+              {[
+                ["set", "SET #"],
+                ["name", "NAME"],
+                ["type", "ITEM TYPE"],
+                ["amount", "AMOUNT"],
+                ["total", "TOTAL"],
+                ["available", "AVAILABLE"],
+                ["value", "DEMO CR"],
+                ["buyCost", "EK EUR"],
+                ["marketPrice", "VK EUR"],
+              ].map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
               ))}
-              <th>EVENT</th>
-              {sortHeader("value", "VALUE CR")}
-              <th>EUR REF</th>
-              <th>STATUS</th>
-              <th>EDIT</th>
-            </tr>
-          </thead>
-          <tbody>
-            {draft?.base === null && renderFormRow()}
-            {matching.map((prize) => (
-              <Fragment key={prize.id}>
-                <tr
-                  className={
-                    draft?.prize.id === prize.id ? "ghost-selected" : undefined
-                  }
-                >
-                  <td>
-                    <ProductImage prize={prize} className="ghost-thumb" />
-                  </td>
-                  <td>#{String(setNumber(prize) ?? 0).padStart(2, "0")}</td>
-                  <th scope="row">
-                    {prize.name}
-                    <small>{prize.detail}</small>
+            </select>
+          </label>
+          <button
+            type="button"
+            className="admin-secondary"
+            onClick={() =>
+              setSort((current) => ({
+                ...current,
+                direction:
+                  current.direction === "ascending"
+                    ? "descending"
+                    : "ascending",
+              }))
+            }
+          >
+            {sort.direction === "ascending" ? "ASCENDING ↑" : "DESCENDING ↓"}
+          </button>
+        </div>
+      )}
+      <div ref={tableViewport} className="admin-table-wrap ghost-table-wrap">
+        {view === "table" && (
+          <table className="admin-table ghost-table">
+            <thead>
+              <tr>
+                <th>PHOTO</th>
+                {sortHeader("set", "SET #")}
+                {sortHeader("name", "NAME")}
+                {sortHeader("type", "ITEM TYPE")}
+                {sortHeader("amount", "AMOUNT")}
+                {sortHeader("total", "TOTAL")}
+                <th>RESERVED</th>
+                {sortHeader("available", "AVAILABLE")}
+                {tiers.map((id) => (
+                  <th key={id} className={`ghost-tier-column ${id}`}>
+                    {id.toUpperCase()}
                   </th>
-                  <td>{labelOf(prize)}</td>
-                  <td>{amountOf(prize)}</td>
-                  <td>{number(prize.startingQuantity)}</td>
-                  <td>{number(reservedFor(state, prize.id))}</td>
-                  <td>{number(remainingStock(state, prize.id))}</td>
-                  {tiers.map((id) => (
-                    <td key={id}>
+                ))}
+                <th className="ghost-event-column">EVENT</th>
+                {sortHeader("value", "DEMO CR")}
+                {sortHeader("buyCost", "EK EUR")}
+                {sortHeader("marketPrice", "VK EUR")}
+                <th>STATUS</th>
+                <th>EDIT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {draft?.base === null && renderFormRow()}
+              {matching.map((prize) => (
+                <Fragment key={prize.id}>
+                  <tr
+                    className={
+                      draft?.prize.id === prize.id
+                        ? "ghost-selected"
+                        : undefined
+                    }
+                  >
+                    <td>
+                      <ProductImage prize={prize} className="ghost-thumb" />
+                    </td>
+                    <td>#{String(setNumber(prize) ?? 0).padStart(2, "0")}</td>
+                    <th scope="row">
+                      {prize.name}
+                      <small>{prize.detail}</small>
+                    </th>
+                    <td>{labelOf(prize)}</td>
+                    <td>{amountOf(prize)}</td>
+                    <td>{number(prize.startingQuantity)}</td>
+                    <td>{number(reservedFor(state, prize.id))}</td>
+                    <td>{number(remainingStock(state, prize.id))}</td>
+                    {tiers.map((id) => (
+                      <td key={id} className={`ghost-tier-column ${id}`}>
+                        <input
+                          aria-label={`${id} machine for ${prize.name}`}
+                          className="ghost-quick-toggle"
+                          type="checkbox"
+                          checked={prize.machineIds.includes(id)}
+                          disabled={
+                            !ready || !!pending || draft?.prize.id === prize.id
+                          }
+                          onChange={() => quickToggle(prize.id, id)}
+                        />
+                        <small className="ghost-odds">
+                          {oddsLabel(prize.id, id)}
+                        </small>
+                      </td>
+                    ))}
+                    <td className="ghost-event-column">
                       <input
-                        aria-label={`${id} machine for ${prize.name}`}
+                        aria-label={`Event assignment for ${prize.name}`}
                         className="ghost-quick-toggle"
                         type="checkbox"
-                        checked={prize.machineIds.includes(id)}
+                        checked={eventOf(prize)}
                         disabled={
                           !ready || !!pending || draft?.prize.id === prize.id
                         }
-                        onChange={() => quickToggle(prize.id, id)}
+                        onChange={() => quickEventToggle(prize.id)}
                       />
                     </td>
-                  ))}
-                  <td>
-                    <input
-                      aria-label={`Event assignment for ${prize.name}`}
-                      className="ghost-quick-toggle"
-                      type="checkbox"
-                      checked={eventOf(prize)}
-                      disabled={
-                        !ready || !!pending || draft?.prize.id === prize.id
-                      }
-                      onChange={() => quickEventToggle(prize.id)}
-                    />
-                  </td>
-                  <td>{number(prize.value)}</td>
-                  <td>
-                    {prize.marketPriceEur === null
-                      ? "—"
-                      : `€${number(prize.marketPriceEur)}`}
-                  </td>
-                  <td>
-                    <span
-                      className={`ghost-status ${statusOf(state, prize).toLowerCase().replaceAll(" ", "-")}`}
-                    >
-                      {statusOf(state, prize)}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="admin-secondary ghost-edit-button"
-                      aria-expanded={draft?.prize.id === prize.id}
-                      onClick={() =>
-                        draft?.prize.id === prize.id
-                          ? setDraft(null)
-                          : edit(prize)
-                      }
-                      disabled={!!pending}
-                    >
-                      {draft?.prize.id === prize.id ? "CLOSE" : "EDIT"}
-                    </button>
-                  </td>
-                </tr>
-                {draft?.base !== null &&
-                  draft?.prize.id === prize.id &&
-                  renderFormRow()}
-              </Fragment>
+                    <td>{number(prize.value)}</td>
+                    <td>
+                      {prize.buyCostEur === null ||
+                      prize.buyCostEur === undefined
+                        ? "—"
+                        : `€${number(prize.buyCostEur)}`}
+                    </td>
+                    <td>
+                      {prize.marketPriceEur === null
+                        ? "—"
+                        : `€${number(prize.marketPriceEur)}`}
+                    </td>
+                    <td>
+                      <span
+                        className={`ghost-status ${statusOf(state, prize).toLowerCase().replaceAll(" ", "-")}`}
+                      >
+                        {statusOf(state, prize)}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="admin-secondary ghost-edit-button"
+                        aria-expanded={draft?.prize.id === prize.id}
+                        onClick={() =>
+                          draft?.prize.id === prize.id
+                            ? setDraft(null)
+                            : edit(prize)
+                        }
+                        disabled={!!pending}
+                      >
+                        {draft?.prize.id === prize.id ? "CLOSE" : "EDIT"}
+                      </button>
+                    </td>
+                  </tr>
+                  {draft?.base !== null &&
+                    draft?.prize.id === prize.id &&
+                    renderFormRow()}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {view === "cards" && (
+          <div className="ghost-card-list">
+            {draft?.base === null && (
+              <article className="ghost-card ghost-card-editor">
+                {renderEditorForm()}
+              </article>
+            )}
+            {matching.map((prize) => (
+              <article
+                key={prize.id}
+                className={`ghost-card ${draft?.prize.id === prize.id ? "ghost-selected" : ""}`}
+              >
+                <ProductImage
+                  prize={prize}
+                  className="ghost-card-image"
+                  size={160}
+                />
+                <div className="ghost-card-copy">
+                  <p className="ghost-card-set">
+                    #{String(setNumber(prize) ?? 0).padStart(2, "0")} ·{" "}
+                    {labelOf(prize)}
+                  </p>
+                  <h3>{prize.name}</h3>
+                  <p>
+                    {amountOf(prize)} · {prize.detail}
+                  </p>
+                  <dl className="ghost-card-stats">
+                    <div>
+                      <dt>LEFT / RESERVED / TOTAL</dt>
+                      <dd>
+                        {number(remainingStock(state, prize.id))} /{" "}
+                        {number(reservedFor(state, prize.id))} /{" "}
+                        {number(prize.startingQuantity)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>EK EUR</dt>
+                      <dd>
+                        {prize.buyCostEur == null
+                          ? "—"
+                          : `€${number(prize.buyCostEur)}`}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>VK EUR</dt>
+                      <dd>
+                        {prize.marketPriceEur == null
+                          ? "—"
+                          : `€${number(prize.marketPriceEur)}`}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>DEMO CR</dt>
+                      <dd>{number(prize.value)}</dd>
+                    </div>
+                  </dl>
+                </div>
+                <div className="ghost-card-controls">
+                  <div className="ghost-card-tiers">
+                    {tiers.map((id) => (
+                      <label key={id} className={`ghost-tier-column ${id}`}>
+                        <input
+                          aria-label={`${id} machine for ${prize.name}`}
+                          className="ghost-quick-toggle"
+                          type="checkbox"
+                          checked={prize.machineIds.includes(id)}
+                          disabled={
+                            !ready || !!pending || draft?.prize.id === prize.id
+                          }
+                          onChange={() => quickToggle(prize.id, id)}
+                        />
+                        {id}{" "}
+                        <small className="ghost-odds">
+                          {oddsLabel(prize.id, id)}
+                        </small>
+                      </label>
+                    ))}
+                    <label className="ghost-event-column">
+                      <input
+                        aria-label={`Event assignment for ${prize.name}`}
+                        className="ghost-quick-toggle"
+                        type="checkbox"
+                        checked={eventOf(prize)}
+                        disabled={
+                          !ready || !!pending || draft?.prize.id === prize.id
+                        }
+                        onChange={() => quickEventToggle(prize.id)}
+                      />{" "}
+                      EVENT
+                    </label>
+                  </div>
+                  <span
+                    className={`ghost-status ${statusOf(state, prize).toLowerCase().replaceAll(" ", "-")}`}
+                  >
+                    {statusOf(state, prize)}
+                  </span>
+                  <button
+                    type="button"
+                    className="admin-secondary ghost-edit-button"
+                    aria-expanded={draft?.prize.id === prize.id}
+                    onClick={() =>
+                      draft?.prize.id === prize.id
+                        ? setDraft(null)
+                        : edit(prize)
+                    }
+                    disabled={!!pending}
+                  >
+                    {draft?.prize.id === prize.id ? "CLOSE" : "EDIT"}
+                  </button>
+                </div>
+                {draft?.base !== null && draft?.prize.id === prize.id && (
+                  <div className="ghost-card-editor">{renderEditorForm()}</div>
+                )}
+              </article>
             ))}
-          </tbody>
-        </table>
+          </div>
+        )}
         {matching.length === 0 && (
           <p className="admin-empty-result">No matching prizes.</p>
         )}

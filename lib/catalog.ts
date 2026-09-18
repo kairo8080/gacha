@@ -7,6 +7,8 @@ export type StockPrize = Prize & {
   language: "EN";
   cardmarketUrl: string | null;
   marketPriceEur: number | null;
+  /** Manually entered EUR acquisition cost; absent in older v5 sessions. */
+  buyCostEur?: number | null;
   marketCheckedAt: string | null;
   /** Absent metadata retains the original v5 defaults: false, active, and null. */
   specialEvent?: boolean;

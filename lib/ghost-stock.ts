@@ -74,7 +74,7 @@ export function isPrizeSnapshot(value: unknown): value is Prize {
   );
 }
 
-/** Cardmarket references are manually verified EN references, never live price feeds. */
+/** EUR values are manual estimates; optional Cardmarket references are never live feeds. */
 export function isStockPrize(value: unknown): value is StockPrize {
   if (!isPrizeSnapshot(value)) return false;
   const prize = value as StockPrize;
@@ -100,11 +100,12 @@ export function isStockPrize(value: unknown): value is StockPrize {
     (!["pack", "box"].includes(prize.kind) || prize.setId !== null) &&
     (prize.cardmarketUrl === null ||
       isCardmarketReference(prize.cardmarketUrl)) &&
+    (prize.buyCostEur === undefined ||
+      prize.buyCostEur === null ||
+      price(prize.buyCostEur)) &&
     (prize.marketPriceEur === null
       ? prize.marketCheckedAt === null
-      : price(prize.marketPriceEur) &&
-        prize.cardmarketUrl !== null &&
-        prize.marketCheckedAt !== null) &&
+      : price(prize.marketPriceEur) && prize.marketCheckedAt !== null) &&
     (prize.marketCheckedAt === null ||
       (typeof prize.marketCheckedAt === "string" &&
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(
@@ -131,6 +132,7 @@ export function copyStockPrize(prize: StockPrize): StockPrize {
     language: "EN",
     cardmarketUrl: prize.cardmarketUrl,
     marketPriceEur: prize.marketPriceEur,
+    ...(prize.buyCostEur === undefined ? {} : { buyCostEur: prize.buyCostEur }),
     marketCheckedAt: prize.marketCheckedAt,
     ...(prize.specialEvent === undefined
       ? {}

@@ -1,4 +1,4 @@
-# Gacha Arcade — v0.1.10
+# Gacha Arcade — v0.1.11
 
 A local, simulated Lorcana collectible arcade using the owner's original pixel art. Built with Next.js, TypeScript, and React; fonts and artwork are served locally.
 
@@ -11,11 +11,11 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. Admin login requires the server-only variables documented in `.env.example`; no wallet or payment credentials are used.
 
-## Current release: v0.1.10
+## Current release: v0.1.11
 
 The visible release label is sourced from the `version` field in `package.json`; the npm lockfile and UI must stay synchronized with it. Every completed update increments the patch version once, records a matching version commit, creates an annotated immutable Git tag, publishes a matching GitHub release, pushes the commit and tag to the configured repository's default branch, and verifies the deployed Vercel version. Previous tags and releases remain available for rollback by redeploying a tag or reverting as a new version; never force-push or rewrite tags. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
 
-Current iteration: **v0.1.10 — Desktop stock management**. The next routine update will be **v0.1.11**; the next larger milestone will be **v0.2.0**.
+Current iteration: **v0.1.11 — Stock views and odds planning**. The next routine update will be **v0.1.12**; the next larger milestone will be **v0.2.0**.
 
 The public `/dev` route is an annotated working arcade for review. It is explicitly simulated, marked `noindex`, and contains no admin data or credentials, private stock counts, or real payments. Its browser-local demo wallet and collection follow the main simulation. UI-region labels A01–A24 update across machine, pull, result, and collection states; the label toggle is available below the hero. The extra demo/subheader and introductory copy were removed; the demo note and reset control live in the top header. Scene sizing is responsive, and the character’s tallest idle pose is sized to two-thirds of the machine’s visible artwork height after accounting for transparent sprite margins; its natural idle bob is unchanged.
 
@@ -82,3 +82,5 @@ The intended GitHub repository is `https://github.com/kairo8080/gacha`. Push the
 `vercel.json` declares the Next.js framework. All behavior remains simulated when deployed. Original editing/reference exports under `pixelart/` are optional for running the app; its required artwork is copied under `public/pixelart/`.
 
 Product photos live in public/products/. The admin uses actual available files and marks missing photos clearly. See [the naming guide](docs/product-images.md) and [image sources](docs/product-image-sources.md). Paused, retired and empty products cannot be drawn; an event-only assignment is saved for future event setup. All stock and edits remain simulated and local to the browser.
+
+The Odds Lab previews and applies machine-specific simulation probabilities from manually entered EK/VK, EUR pull prices, target edge and expenses. Blank prices remain unknown; tuned machines pause when the target cannot be met. Ghost stock supports colored machine assignments, per-item odds, and list/card views. See docs/inventory-seed.md for calculation and persistence rules.

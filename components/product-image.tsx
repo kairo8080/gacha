@@ -25,9 +25,11 @@ export function ProductImagesProvider({
 export default function ProductImage({
   prize,
   className = "",
+  size = 48,
 }: {
   prize: StockPrize;
   className?: string;
+  size?: number;
 }) {
   const available = useContext(ProductImagesContext);
   const source = resolveProductImagePath(prize, available);
@@ -38,9 +40,9 @@ export default function ProductImage({
         <Image
           src={source}
           alt={`${prize.name} · English product photo`}
-          width={48}
-          height={48}
-          sizes="48px"
+          width={size}
+          height={size}
+          sizes={`${size}px`}
           loading="lazy"
           onError={() => setFailedSource(source)}
         />

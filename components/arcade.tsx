@@ -26,7 +26,6 @@ import {
 } from "@/components/pixel-icons";
 import {
   demoReducer,
-  drawPrizeIndex,
   getMachines,
   getStockCatalog,
   machineStock,
@@ -36,6 +35,7 @@ import {
   type MachineId,
   type Prize,
 } from "@/lib/demo";
+import { getLiveMachineOdds, samplePrizeIndex } from "@/lib/odds";
 import { APP_VERSION } from "@/lib/version";
 import { useDemoSession } from "@/hooks/use-demo-session";
 import { useDemoPresence } from "@/hooks/use-demo-presence";
@@ -173,6 +173,8 @@ export default function Arcade() {
     setState,
     ready,
     storageWarning,
+    syncNotice,
+    clearSyncNotice,
     legacySessionNotice,
     demoDay,
   } = useDemoSession();
@@ -206,7 +208,23 @@ export default function Arcade() {
 
   const activeHeld = activeState.items.filter((item) => item.status === "held");
   const activeResult = activeState.items.find((item) => item.id === resultId);
+  useEffect(() => {
+    // A conflicting cross-tab save can reject an optimistic pull. Close its
+    // pending reveal; the inline sync notice explains why nothing was charged.
+    if (!syncNotice || !resultId || activeResult) return;
+    if (timer.current) clearTimeout(timer.current);
+    pullLock.current = false;
+    setRunning(false);
+    setResultId(null);
+    setPanel(null);
+  }, [syncNotice, resultId, activeResult]);
   const selectedMachineStock = machineStock(activeState, selected);
+  const selectedOdds = getLiveMachineOdds(activeState, selected);
+  const oddsPaused =
+    selectedMachineStock > 0 && selectedOdds.status !== "ready";
+  const prizeProbabilities = new Map(
+    selectedOdds.rows.map((row) => [row.prizeId, row.probability]),
+  );
   const totalRemainingStock = stockCatalog.reduce(
     (total, prize) => total + remainingStock(activeState, prize.id),
     0,
@@ -268,28 +286,20 @@ export default function Arcade() {
       !ready ||
       pullLock.current ||
       activeState.balance < machine.price ||
-      selectedMachineStock < 1
+      selectedMachineStock < 1 ||
+      oddsPaused
     )
       return;
     pullLock.current = true;
     const itemId = crypto.randomUUID();
-    const limit =
-      Math.floor(2 ** 53 / selectedMachineStock) * selectedMachineStock;
     const ticket = new Uint32Array(2);
-    let random: number;
-    do {
-      crypto.getRandomValues(ticket);
-      random = (ticket[0] & 0x1fffff) * 2 ** 32 + ticket[1];
-    } while (random >= limit);
-    const prizeIndex = drawPrizeIndex(
-      activeState,
-      selected,
-      random % selectedMachineStock,
-    );
+    crypto.getRandomValues(ticket);
+    const random = ((ticket[0] & 0x1fffff) * 2 ** 32 + ticket[1]) / 2 ** 53;
+    const prizeIndex = samplePrizeIndex(activeState, selected, random);
     if (prizeIndex < 0) {
       pullLock.current = false;
       notify(
-        "That machine is sold out in this local demo. Reset demo to play again.",
+        "This machine is currently unavailable. Check its stock and odds settings.",
       );
       return;
     }
@@ -377,6 +387,7 @@ export default function Arcade() {
                 prize.machineIds.includes(selected);
               const tier = prize.machineIds[0] ?? selected;
               const left = remainingStock(activeState, prize.id);
+              const probability = prizeProbabilities.get(prize.id) ?? 0;
               return (
                 <article
                   className="pool-stock-row"
@@ -388,9 +399,11 @@ export default function Arcade() {
                     <span>
                       {prize.detail} · {left} available ·{" "}
                       {eligibleInSelectedMachine
-                        ? selectedMachineStock > 0
-                          ? `${((left / selectedMachineStock) * 100).toFixed(1)}% odds`
-                          : "Empty pool"
+                        ? oddsPaused
+                          ? "Draws paused"
+                          : selectedMachineStock > 0
+                            ? `${probability > 0 && probability < 0.0001 ? "<0.01" : (probability * 100).toFixed(2)}% odds`
+                            : "Empty pool"
                         : `Not in ${machine.name} pool`}
                     </span>
                     {showAllStock && (
@@ -414,9 +427,10 @@ export default function Arcade() {
             })}
           </div>
           <p className="pool-caption">
-            Counts are reward units: a bundle or box uses one draw ticket. Each
-            eligible remaining prize has an equal chance; odds are rounded for
-            the selected machine. Resell returns the prize to its pool.
+            One bundle or box is one reward unit. These are the current odds for
+            the selected machine; they update with stock and admin settings.
+            Resell returns the prize to its pool. Displayed percentages are
+            rounded.
           </p>
         </>
       )}
@@ -740,6 +754,7 @@ export default function Arcade() {
 
         {(notice ||
           storageWarning ||
+          syncNotice ||
           (legacySessionNotice && showLegacySessionNotice)) && (
           <div
             className="arcade-feedback"
@@ -751,7 +766,8 @@ export default function Arcade() {
             <span>
               {storageWarning
                 ? "Storage unavailable. This session may not survive a refresh."
-                : notice ||
+                : syncNotice ||
+                  notice ||
                   "Your previous demo is saved separately. This session uses sample stock."}
             </span>
             {!storageWarning && (
@@ -759,6 +775,7 @@ export default function Arcade() {
                 aria-label="Dismiss update"
                 onClick={() => {
                   setNotice("");
+                  clearSyncNotice();
                   setShowLegacySessionNotice(false);
                 }}
               >
@@ -984,12 +1001,14 @@ export default function Arcade() {
                             ? () => openPanel("reset")
                             : pull
                       }
-                      disabled={!ready}
+                      disabled={!ready || (!running && oddsPaused)}
                     >
                       {running ? (
                         <>
                           Reveal prize <ArrowRight size={19} />
                         </>
+                      ) : oddsPaused ? (
+                        "MACHINE PAUSED"
                       ) : activeState.balance < machine.price ||
                         selectedMachineStock < 1 ? (
                         <>
@@ -1013,6 +1032,10 @@ export default function Arcade() {
                       >
                         Skip animation <ChevronRight size={14} />
                       </button>
+                    ) : oddsPaused ? (
+                      <p className="pull-note" role="status">
+                        This machine is paused while its demo odds are reviewed.
+                      </p>
                     ) : activeState.balance < machine.price ||
                       selectedMachineStock < 1 ? (
                       <button

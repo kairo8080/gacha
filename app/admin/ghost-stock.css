@@ -15,7 +15,9 @@
 }
 .ghost-filters {
   display: grid;
-  grid-template-columns: minmax(220px, 1.8fr) repeat(4, minmax(105px, 0.65fr));
+  grid-template-columns:
+    minmax(220px, 1.8fr) repeat(4, minmax(105px, 0.65fr))
+    auto;
   gap: 8px;
   padding: 9px;
   border-bottom: 1px solid #496181;
@@ -82,7 +84,8 @@
 .ghost-table thead th:nth-child(10),
 .ghost-table thead th:nth-child(11),
 .ghost-table thead th:nth-child(12),
-.ghost-table thead th:nth-child(15) {
+.ghost-table thead th:nth-child(16),
+.ghost-table thead th:nth-child(17) {
   padding: 6px 7px;
 }
 .ghost-sort {
@@ -223,6 +226,24 @@
   margin: 0;
   accent-color: #65dfb0;
 }
+.ghost-tier-picker .admin-tier.common {
+  color: #40c7f4 !important;
+}
+.ghost-tier-picker .admin-tier.rare {
+  color: #c073f5 !important;
+}
+.ghost-tier-picker .admin-tier.epic {
+  color: #ffd34d !important;
+}
+.ghost-tier-picker .admin-tier.common input {
+  accent-color: #40c7f4;
+}
+.ghost-tier-picker .admin-tier.rare input {
+  accent-color: #c073f5;
+}
+.ghost-tier-picker .admin-tier.epic input {
+  accent-color: #ffd34d;
+}
 .ghost-market-details {
   padding: 0;
   border: 0;
@@ -275,6 +296,195 @@
   border-top: 1px solid #496181;
   font-size: 11px;
 }
+.ghost-view-toggle {
+  display: flex;
+  align-self: end;
+  min-height: 32px;
+  border: 1px solid #496181;
+}
+.ghost-view-toggle button {
+  padding: 5px 8px;
+  color: #a6b6cf;
+  border: 0;
+  border-right: 1px solid #496181;
+  background: #111b2d;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+.ghost-view-toggle button:last-child {
+  border-right: 0;
+}
+.ghost-view-toggle button.is-active {
+  color: #111b2d;
+  background: #65dfb0;
+}
+.ghost-tier-column {
+  text-align: center;
+  border-left: 2px solid currentColor !important;
+}
+.ghost-tier-column.common {
+  color: #40c7f4;
+  background: color-mix(in srgb, #40c7f4 8%, transparent) !important;
+}
+.ghost-tier-column.rare {
+  color: #c073f5;
+  background: color-mix(in srgb, #c073f5 8%, transparent) !important;
+}
+.ghost-tier-column.epic {
+  color: #ffd34d;
+  background: color-mix(in srgb, #ffd34d 8%, transparent) !important;
+}
+.ghost-tier-column .ghost-quick-toggle {
+  accent-color: currentColor;
+}
+.ghost-event-column,
+.ghost-table .ghost-event-column {
+  color: #ff8b9b;
+  border-left: 2px solid #ff8b9b !important;
+  background: color-mix(in srgb, #ff8b9b 8%, transparent) !important;
+}
+.ghost-table thead .ghost-tier-column.common {
+  background: color-mix(in srgb, #40c7f4 12%, #132038) !important;
+}
+.ghost-table thead .ghost-tier-column.rare {
+  background: color-mix(in srgb, #c073f5 12%, #132038) !important;
+}
+.ghost-table thead .ghost-tier-column.epic {
+  background: color-mix(in srgb, #ffd34d 12%, #132038) !important;
+}
+.ghost-table thead .ghost-event-column {
+  background: color-mix(in srgb, #ff8b9b 12%, #132038) !important;
+}
+.ghost-event-column .ghost-quick-toggle {
+  accent-color: #ff8b9b;
+}
+.ghost-odds {
+  display: block;
+  min-width: 42px;
+  margin-top: 2px;
+  color: currentColor !important;
+  font-size: 9px !important;
+  letter-spacing: 0;
+}
+.ghost-card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 10px;
+  align-content: start;
+  padding: 10px;
+}
+.ghost-card-order {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.ghost-card-order label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ghost-card-order select {
+  font: inherit;
+  color: var(--text);
+  background: #111b2d;
+  border: 1px solid var(--line);
+  padding: 4px;
+}
+.ghost-card-order button {
+  font-size: 11px;
+  min-height: 24px;
+  padding: 3px 8px;
+}
+.ghost-card {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #496181;
+  background: #142139;
+}
+.ghost-card-image {
+  width: 108px;
+  height: 108px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.ghost-card-image .product-image-missing {
+  width: 100%;
+  height: 100%;
+}
+.ghost-card-copy h3 {
+  margin: 3px 0;
+  font-size: 13px;
+}
+.ghost-card-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.ghost-card-set {
+  color: #b7cbe8 !important;
+}
+.ghost-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px 10px;
+  margin: 8px 0 0;
+}
+.ghost-card-stats > div:first-child {
+  grid-column: 1 / -1;
+}
+.ghost-card-stats div {
+  min-width: 0;
+}
+.ghost-card-stats dt {
+  color: #a6b6cf;
+  font-size: 9px;
+}
+.ghost-card-stats dd {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: 11px;
+}
+.ghost-card-controls {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: 8px;
+}
+.ghost-card-tiers {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+.ghost-card-tiers label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  font-size: 10px;
+  text-transform: uppercase;
+  flex-wrap: wrap;
+}
+.ghost-card-tiers .ghost-odds {
+  margin: 0 0 0 auto;
+}
+.ghost-card-editor {
+  grid-column: 1 / -1;
+  border-top: 2px solid #65dfb0;
+}
+.ghost-card.ghost-selected {
+  grid-column: 1 / -1;
+}
+.ghost-card-editor.ghost-card {
+  display: block;
+}
 @media (max-width: 800px) {
   .ghost-panel {
     min-height: auto;
@@ -293,5 +503,18 @@
   }
   .ghost-market-grid {
     grid-template-columns: 1fr 1fr;
+  }
+  .ghost-card-list {
+    grid-template-columns: 1fr;
+  }
+  .ghost-card {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+  .ghost-card-image {
+    width: 82px;
+    height: 82px;
+  }
+  .ghost-card-controls {
+    grid-column: 1 / -1;
   }
 }

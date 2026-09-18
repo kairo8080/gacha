@@ -5,6 +5,7 @@ import AdminDashboard from "@/components/admin-dashboard";
 import { isProductImagePath } from "@/lib/ghost-stock";
 import "./admin.css";
 import "./ghost-stock.css";
+import "./odds.css";
 
 export const metadata: Metadata = {
   title: "Admin | Gacha Arcade",

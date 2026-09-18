@@ -11,6 +11,7 @@ import {
 import { useDemoSession } from "@/hooks/use-demo-session";
 import { useDemoPresence } from "@/hooks/use-demo-presence";
 import GhostStockEditor from "@/components/ghost-stock-editor";
+import OddsCalculator from "@/components/odds-calculator";
 import { ProductImagesProvider } from "@/components/product-image";
 import {
   demoReducer,
@@ -24,7 +25,7 @@ import { APP_VERSION } from "@/lib/version";
 
 type Session = { authenticated: boolean; configured: boolean };
 type WarehouseRow = { id: string; name: string; packs: number; boxes: number };
-type Section = "overview" | "physical" | "ghost" | "shipping";
+type Section = "overview" | "physical" | "ghost" | "odds" | "shipping";
 const fmt = (value: number) =>
   new Intl.NumberFormat("en", { maximumFractionDigits: 2 }).format(value);
 const colors = { common: "#40c7f4", rare: "#c073f5", epic: "#ffd34d" };
@@ -32,6 +33,7 @@ const sections: { id: Section; name: string }[] = [
   { id: "overview", name: "Overview" },
   { id: "physical", name: "Physical stock" },
   { id: "ghost", name: "Ghost stock" },
+  { id: "odds", name: "Odds lab" },
   { id: "shipping", name: "Ship queue" },
 ];
 
@@ -51,8 +53,16 @@ export default function AdminDashboard({
   >("loading");
   const [query, setQuery] = useState("");
   const [notice, setNotice] = useState("");
-  const { state, setState, ready, storageWarning, demoDay, setDemoDay } =
-    useDemoSession();
+  const {
+    state,
+    setState,
+    ready,
+    storageWarning,
+    syncNotice,
+    clearSyncNotice,
+    demoDay,
+    setDemoDay,
+  } = useDemoSession();
   const online = useDemoPresence();
   const machines = getMachines(state);
   const stockCatalog = getStockCatalog(state);
@@ -289,6 +299,14 @@ export default function AdminDashboard({
             {error || "Browser storage unavailable. Changes may not be saved."}
           </p>
         )}
+        {syncNotice && (
+          <p className="admin-notice" role="status">
+            {syncNotice}
+            <button onClick={clearSyncNotice} aria-label="Dismiss sync notice">
+              ×
+            </button>
+          </p>
+        )}
         {notice && (
           <p className="admin-notice" role="status">
             {notice}
@@ -471,6 +489,10 @@ export default function AdminDashboard({
           <ProductImagesProvider paths={productImages}>
             <GhostStockEditor state={state} setState={setState} ready={ready} />
           </ProductImagesProvider>
+        )}
+
+        {section === "odds" && (
+          <OddsCalculator state={state} setState={setState} ready={ready} />
         )}
 
         {section === "physical" && (

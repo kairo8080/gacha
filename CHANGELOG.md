@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.1.11 — 2026-09-18
+
+- Colored Common, Rare, Epic and Event stock assignments; added per-machine item probabilities and a sortable card view alongside the list.
+- Added editable EK buy cost and VK market value in EUR per complete reward unit. Manual VK entry is supported; optional Cardmarket references still require English-listing confirmation.
+- Added the three-machine Odds Lab with EUR price, target edge and per-pull expense inputs, expected cost/payout/profit metrics, and a reviewable distribution before applying it.
+- Tuned simulation odds use the same remaining-stock distribution displayed to players. Missing prices, impossible targets or numerically unrepresentable chances pause enabled machines; existing stock-weighted mode remains available without an edge guarantee.
+- Preserved old saved sessions, historical reward values and settings across reset. No real prices, payments or private inventory were introduced.
+- Serialized browser-tab saves and reject stale snapshots so a concurrent pull cannot overwrite newer admin pricing or odds; conflicts recover with an inline notice.
+- Verified typecheck, all 55 tests, production build, 1280×720 stock/card/odds layouts, manual price editing, tuned odds application/reload, player-visible odds, repricing pauses, and concurrent-tab conflict recovery.
+
 ## v0.1.10 — 2026-09-18
 
 - Expanded the desktop admin to the full viewport, moved navigation into the header, and replaced the permanent prize side panel with a sortable, filterable stock table and inline row editing.

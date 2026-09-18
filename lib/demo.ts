@@ -10,6 +10,14 @@ import {
   isPrizeSnapshot,
   isStockPrize,
 } from "./ghost-stock.ts";
+import {
+  getLiveMachineOdds,
+  calculateMachineOdds,
+  isMachineOddsConfig,
+  copyMachineOddsConfig,
+  type MachineOddsConfig,
+} from "./odds.ts";
+export type { MachineOddsConfig } from "./odds.ts";
 
 /**
  * Local-only state for the arcade demo. Credits, prizes, resale, and shipping
@@ -54,6 +62,7 @@ export type DemoState = {
   items: InventoryItem[];
   pulls: number;
   stockCatalog?: StockPrize[];
+  oddsSettings?: Partial<Record<MachineId, MachineOddsConfig>>;
 };
 
 export const initialState: DemoState = { balance: 250, items: [], pulls: 0 };
@@ -136,6 +145,7 @@ export type DemoAction =
   | { type: "queue"; itemId: string }
   | { type: "ship"; itemId: string; demoDay: number }
   | { type: "save-stock"; prize: StockPrize }
+  | { type: "save-odds"; machineId: MachineId; config: MachineOddsConfig }
   | { type: "reset" };
 
 export function getStockCatalog(state: DemoState): StockPrize[] {
@@ -158,9 +168,30 @@ const machineById = (id: MachineId, state: DemoState) =>
 
 export function demoReducer(state: DemoState, action: DemoAction): DemoState {
   if (action.type === "reset") {
-    return state.stockCatalog
-      ? { ...initialState, stockCatalog: state.stockCatalog }
-      : initialState;
+    if (!state.stockCatalog && !state.oddsSettings) return initialState;
+    return {
+      ...initialState,
+      ...(state.stockCatalog ? { stockCatalog: state.stockCatalog } : {}),
+      ...(state.oddsSettings ? { oddsSettings: state.oddsSettings } : {}),
+    };
+  }
+
+  if (action.type === "save-odds") {
+    if (!isMachineId(action.machineId) || !isMachineOddsConfig(action.config))
+      return state;
+    if (
+      action.config.enabled &&
+      calculateMachineOdds(state, action.machineId, action.config).status !==
+        "ready"
+    )
+      return state;
+    return {
+      ...state,
+      oddsSettings: {
+        ...state.oddsSettings,
+        [action.machineId]: copyMachineOddsConfig(action.config),
+      },
+    };
   }
 
   if (action.type === "save-stock") {
@@ -199,6 +230,16 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       return state;
     }
     const selectedPrize = machine.prizes[action.prizeIndex];
+    if (state.oddsSettings?.[machine.id]?.enabled) {
+      const odds = getLiveMachineOdds(state, machine.id);
+      if (
+        odds.status !== "ready" ||
+        !odds.rows.some(
+          (row) => row.prizeId === selectedPrize.id && row.probability > 0,
+        )
+      )
+        return state;
+    }
     if (
       (selectedPrize.availability ?? "active") !== "active" ||
       !selectedPrize.machineIds.includes(machine.id) ||
@@ -293,6 +334,22 @@ export function parseSavedState(raw: string | null): DemoState {
       !Array.isArray(candidate.items)
     ) {
       return initialState;
+    }
+
+    let oddsSettings: DemoState["oddsSettings"];
+    if (candidate.oddsSettings !== undefined) {
+      if (
+        !candidate.oddsSettings ||
+        typeof candidate.oddsSettings !== "object" ||
+        Array.isArray(candidate.oddsSettings)
+      )
+        return initialState;
+      oddsSettings = {};
+      for (const [id, config] of Object.entries(candidate.oddsSettings)) {
+        if (!isMachineId(id) || !isMachineOddsConfig(config))
+          return initialState;
+        oddsSettings[id] = copyMachineOddsConfig(config);
+      }
     }
 
     let catalog: StockPrize[] | undefined;
@@ -393,6 +450,7 @@ export function parseSavedState(raw: string | null): DemoState {
       balance: candidate.balance,
       pulls: candidate.pulls,
       items,
+      ...(oddsSettings === undefined ? {} : { oddsSettings }),
       ...(catalog || migratedLegacy
         ? { stockCatalog: catalog ?? stockCatalog.map(copyStockPrize) }
         : {}),
@@ -442,6 +500,8 @@ function samePrize(saved: Record<string, unknown>, prize: Prize): boolean {
         saved.setId === (prize as StockPrize).setId &&
         saved.cardmarketUrl === (prize as StockPrize).cardmarketUrl &&
         saved.marketPriceEur === (prize as StockPrize).marketPriceEur &&
+        (saved.buyCostEur ?? null) ===
+          ((prize as StockPrize).buyCostEur ?? null) &&
         saved.marketCheckedAt === (prize as StockPrize).marketCheckedAt &&
         (saved.specialEvent ?? false) ===
           ((prize as StockPrize).specialEvent ?? false) &&

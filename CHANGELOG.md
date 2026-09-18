@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.9 — 2026-09-18
+
+- Added a compact inline Ghost Stock editor with numbered sets, search/type/machine filters, editable demo values and quantities, and shared stock across multiple machines.
+- Common now supports 1/2/3-pack rewards, sealed booster boxes, D23 Collection 2026 English, sample PSA 9/10 cards, and mystery rewards. All 60 seeded prizes use fictional quantities.
+- Added manually checked English-only Cardmarket EUR references, independent from demo credits; no live price feed is connected.
+- Dynamic demo draws use saved browser-local catalog settings. Previous awards retain their original values; v5 migrates old sessions and reset preserves admin configuration.
+- Verified typecheck, 33 tests, production build, desktop/phone UI, cross-tab updates, bundle reservations, historical resale values, and inline validation.
+
 ## v0.1.8 — 2026-09-17
 
 - Documented the standing release and rollback workflow; no product UI behavior changed apart from the release version.

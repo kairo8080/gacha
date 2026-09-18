@@ -37,14 +37,15 @@ export function parseOperations(raw: string | null): DemoOperations {
   return initialOperations;
 }
 
-/** Prefer v4 even when it is invalid, so obsolete previews cannot reappear. */
+/** Prefer the newest existing version even when invalid; obsolete sessions cannot reappear. */
 export function restoreDemoSession(
   currentRaw: string | null,
-  previousRaw: string | null,
+  previousV4Raw: string | null,
+  previousV3Raw: string | null = null,
 ): DemoState {
-  return currentRaw === null
-    ? parsePreviousSavedState(previousRaw)
-    : parseSavedState(currentRaw);
+  if (currentRaw !== null) return parseSavedState(currentRaw);
+  if (previousV4Raw !== null) return parseSavedState(previousV4Raw);
+  return parsePreviousSavedState(previousV3Raw);
 }
 
 /** Metrics describe this browser's single fictional session only. */

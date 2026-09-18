@@ -39,7 +39,7 @@ test("migration prefers canonical state and preserves old preview reservations",
   const old = pull("preview");
   old.items[0] = { ...old.items[0], status: "shipping" };
   const previousRaw = JSON.stringify(old);
-  const migrated = restoreDemoSession(null, previousRaw);
+  const migrated = restoreDemoSession(null, null, previousRaw);
   assert.equal(migrated.items[0].status, "queued");
   assert.equal(JSON.parse(previousRaw).items[0].status, "shipping");
   assert.deepEqual(
@@ -76,4 +76,58 @@ test("metrics count each pull, redemption, and shipping request exactly once", (
   assert.equal(metrics.profit, null);
   assert.equal(getDemoMetrics(initialState).usersPlayed, 0);
   assert.equal(getDemoMetrics(initialState).bestPull, undefined);
+});
+
+test("real v4 and v3 fixture shapes migrate with balances, values and reservations intact", async () => {
+  const { legacyStockCatalog } = await import("./catalog.ts");
+  const prize = legacyStockCatalog.find(
+    (entry) => entry.machineId === "common",
+  )!;
+  const raw = JSON.stringify({
+    balance: 237.2,
+    pulls: 1,
+    items: [
+      {
+        id: "legacy-award",
+        machineId: "common",
+        status: "shipping",
+        createdAt: "2026-09-14T00:00:00.000Z",
+        prize,
+      },
+    ],
+  });
+  const v4 = restoreDemoSession(null, raw, null);
+  assert.equal(v4.balance, 237.2);
+  assert.equal(v4.items[0].status, "shipping");
+  assert.equal(v4.items[0].prize.value, prize.value);
+  assert.equal(v4.items[0].prize.detail, prize.detail);
+  const v3 = restoreDemoSession(null, null, raw);
+  assert.equal(v3.items[0].status, "queued");
+  assert.equal(v3.balance, 237.2);
+  for (const state of [v3, v4]) {
+    assert.deepEqual(
+      restoreDemoSession(JSON.stringify(state), raw, raw),
+      state,
+    );
+    const edited = demoReducer(state, {
+      type: "save-stock",
+      prize: {
+        ...state.stockCatalog!.find((row) => row.id === prize.id)!,
+        machineIds: [],
+        value: 88,
+      },
+    });
+    assert.equal(
+      restoreDemoSession(JSON.stringify(edited), raw, raw).items[0].prize.value,
+      prize.value,
+    );
+  }
+  assert.equal(restoreDemoSession(null, "corrupt", raw), initialState);
+  assert.equal(restoreDemoSession("corrupt", raw, raw), initialState);
+  const tampered = JSON.parse(raw);
+  tampered.items[0].prize.value = 999;
+  assert.equal(
+    restoreDemoSession(null, JSON.stringify(tampered), null),
+    initialState,
+  );
 });

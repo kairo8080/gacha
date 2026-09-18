@@ -193,6 +193,13 @@
 .collection-symbol.graded {
   background: #2b2537;
 }
+.collection-symbol.box,
+.collection-symbol.collection {
+  background: #25394e;
+}
+.collection-symbol.mystery {
+  background: #322b47;
+}
 .collection-symbol span {
   font-size: 14px;
   margin-top: 3px;

@@ -50,6 +50,18 @@ function statusLabel(item: InventoryItem, demoDay: number) {
   return "IN COLLECTION";
 }
 
+function prizeTypeLabel(item: InventoryItem) {
+  const { prize } = item;
+  if (prize.kind === "pack")
+    return prize.packCount === 1 ? "1 PACK" : `${prize.packCount} PACKS`;
+  if (prize.kind === "box") return "BOX";
+  if (prize.kind === "collection")
+    return prize.name.toUpperCase().includes("D23") ? "D23" : "COLLECTION";
+  if (prize.kind === "graded")
+    return prize.grade?.replace(/\s+/g, "") ?? "GRADED";
+  return "MYSTERY";
+}
+
 export function PlayerInventory({
   state,
   setState,
@@ -331,9 +343,7 @@ export function PlayerInventory({
                   aria-hidden="true"
                 >
                   <Package size={28} />
-                  <span>
-                    {item.prize.kind === "graded" ? "GRADED" : "SEALED"}
-                  </span>
+                  <span>{prizeTypeLabel(item)}</span>
                 </div>
                 <span className="collection-value">
                   {credits(item.prize.value)} <small>CR</small>

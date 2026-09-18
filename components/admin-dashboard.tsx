@@ -10,11 +10,12 @@ import {
 } from "@/components/pixel-icons";
 import { useDemoSession } from "@/hooks/use-demo-session";
 import { useDemoPresence } from "@/hooks/use-demo-presence";
+import GhostStockEditor from "@/components/ghost-stock-editor";
 import {
   demoReducer,
-  machines,
+  getMachines,
   remainingStock,
-  stockCatalog,
+  getStockCatalog,
   SHIPPING_UNLOCK_DAY,
 } from "@/lib/demo";
 import { getDemoMetrics, getShippingStage } from "@/lib/operations";
@@ -48,6 +49,8 @@ export default function AdminDashboard() {
   const { state, setState, ready, storageWarning, demoDay, setDemoDay } =
     useDemoSession();
   const online = useDemoPresence();
+  const machines = getMachines(state);
+  const stockCatalog = getStockCatalog(state);
   const metrics = getDemoMetrics(state);
   const shippingOpen = demoDay >= SHIPPING_UNLOCK_DAY;
   const requests = state.items
@@ -225,9 +228,6 @@ export default function AdminDashboard() {
   const stockLeft = stockCatalog.reduce(
     (total, prize) => total + remainingStock(state, prize.id),
     0,
-  );
-  const matchingStock = stockCatalog.filter((prize) =>
-    prize.name.toLowerCase().includes(query.toLowerCase()),
   );
   const matchingWarehouse = warehouse.filter((row) =>
     row.name.toLowerCase().includes(query.toLowerCase()),
@@ -408,7 +408,7 @@ export default function AdminDashboard() {
                 </button>
                 <button onClick={() => setSection("ghost")}>
                   <span>
-                    GHOST STOCK<small>Fictional packs available</small>
+                    GHOST STOCK<small>Fictional reward units available</small>
                   </span>
                   <strong>
                     {fmt(stockLeft)}
@@ -468,20 +468,16 @@ export default function AdminDashboard() {
           </>
         )}
 
-        {(section === "physical" || section === "ghost") && (
+        {section === "ghost" && (
+          <GhostStockEditor state={state} setState={setState} ready={ready} />
+        )}
+
+        {section === "physical" && (
           <section className="admin-panel admin-stock-panel">
             <div className="admin-panel-title">
               <div>
-                <h2>
-                  {section === "physical"
-                    ? "PHYSICAL INVENTORY"
-                    : "GHOST INVENTORY"}
-                </h2>
-                <p>
-                  {section === "physical"
-                    ? "Local owner reference · counts unverified"
-                    : "Fictional stock · this browser’s pulls"}
-                </p>
+                <h2>PHYSICAL INVENTORY</h2>
+                <p>Local owner reference · counts unverified</p>
               </div>
               <label className="admin-search">
                 <span className="sr-only">Search stock</span>
@@ -493,7 +489,7 @@ export default function AdminDashboard() {
                 />
               </label>
             </div>
-            {section === "physical" && warehouseState !== "available" ? (
+            {warehouseState !== "available" ? (
               <div className="admin-empty">
                 <ShieldCheck size={40} />
                 <h3>
@@ -516,61 +512,27 @@ export default function AdminDashboard() {
                     <thead>
                       <tr>
                         <th>SET</th>
-                        {section === "physical" ? (
-                          <>
-                            <th>PACKS</th>
-                            <th>BOXES</th>
-                          </>
-                        ) : (
-                          <>
-                            <th>MACHINE</th>
-                            <th>AVAILABLE</th>
-                            <th>RESERVED</th>
-                          </>
-                        )}
+                        <th>PACKS</th>
+                        <th>BOXES</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {section === "physical"
-                        ? matchingWarehouse.map((row) => (
-                            <tr key={row.id}>
-                              <th scope="row">{row.name}</th>
-                              <td>{fmt(row.packs)}</td>
-                              <td>{fmt(row.boxes)}</td>
-                            </tr>
-                          ))
-                        : matchingStock.map((prize) => (
-                            <tr key={prize.id}>
-                              <th scope="row">{prize.name}</th>
-                              <td>
-                                <span
-                                  className={`admin-tier ${prize.machineId}`}
-                                >
-                                  {prize.machineId}
-                                </span>
-                              </td>
-                              <td>
-                                {remainingStock(state, prize.id)}{" "}
-                                <small>/ {prize.startingQuantity}</small>
-                              </td>
-                              <td>
-                                {prize.startingQuantity -
-                                  remainingStock(state, prize.id)}
-                              </td>
-                            </tr>
-                          ))}
+                      {matchingWarehouse.map((row) => (
+                        <tr key={row.id}>
+                          <th scope="row">{row.name}</th>
+                          <td>{fmt(row.packs)}</td>
+                          <td>{fmt(row.boxes)}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
-                {(section === "physical"
-                  ? matchingWarehouse.length
-                  : matchingStock.length) === 0 && (
+                {matchingWarehouse.length === 0 && (
                   <p className="admin-empty-result">No matching sets.</p>
                 )}
                 <div className="admin-table-footer">
-                  {section === "physical"
-                    ? `${warehouse.length} SETS · BOXES AND PACKS ARE SEPARATE REPORTED COUNTS`
-                    : "14 SETS · SELL BACKS RETURN PACKS TO THE GHOST POOL"}
+                  {warehouse.length} SETS · BOXES AND PACKS ARE SEPARATE
+                  REPORTED COUNTS
                 </div>
               </>
             )}

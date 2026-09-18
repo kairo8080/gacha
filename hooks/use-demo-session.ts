@@ -11,6 +11,7 @@ import {
   initialState,
   LEGACY_STORAGE_KEY,
   PREVIOUS_STORAGE_KEY,
+  PREVIOUS_V4_STORAGE_KEY,
   STORAGE_KEY,
   type DemoState,
 } from "../lib/demo.ts";
@@ -36,13 +37,15 @@ export function useDemoSession() {
       try {
         const current = localStorage.getItem(STORAGE_KEY);
         const previous = localStorage.getItem(PREVIOUS_STORAGE_KEY);
+        const previousV4 = localStorage.getItem(PREVIOUS_V4_STORAGE_KEY);
         const operations = localStorage.getItem(OPERATIONS_STORAGE_KEY);
         lastState.current = current;
         lastOperations.current = operations;
-        setState(restoreDemoSession(current, previous));
+        setState(restoreDemoSession(current, previousV4, previous));
         updateDemoDay(parseOperations(operations).demoDay);
         setLegacySessionNotice(
           current === null &&
+            previousV4 === null &&
             previous === null &&
             localStorage.getItem(LEGACY_STORAGE_KEY) !== null,
         );

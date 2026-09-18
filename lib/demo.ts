@@ -1,4 +1,15 @@
-import { machines, stockCatalog } from "./catalog.ts";
+import {
+  machines,
+  stockCatalog,
+  legacyStockCatalog,
+  type StockPrize,
+} from "./catalog.ts";
+import {
+  copyStockPrize,
+  isMachineId,
+  isPrizeSnapshot,
+  isStockPrize,
+} from "./ghost-stock.ts";
 
 /**
  * Local-only state for the arcade demo. Credits, prizes, resale, and shipping
@@ -10,9 +21,10 @@ export type Prize = {
   id: string;
   name: string;
   detail: string;
-  kind: "pack" | "graded";
+  kind: "pack" | "box" | "collection" | "graded" | "mystery";
+  packCount?: 1 | 2 | 3;
   value: number;
-  grade?: string;
+  grade?: "PSA 9" | "PSA 10";
   startingQuantity?: number;
   machineId?: MachineId;
 };
@@ -24,7 +36,7 @@ export type Machine = {
   price: number;
   tagline: string;
   description: string;
-  prizes: Prize[];
+  prizes: StockPrize[];
 };
 
 export { machines, stockCatalog, totalStartingStock } from "./catalog.ts";
@@ -41,6 +53,7 @@ export type DemoState = {
   balance: number;
   items: InventoryItem[];
   pulls: number;
+  stockCatalog?: StockPrize[];
 };
 
 export const initialState: DemoState = { balance: 250, items: [], pulls: 0 };
@@ -50,7 +63,8 @@ export const resaleRate = 0.8;
 // Keep the old sample-prize session intact; stock simulation starts separately.
 export const LEGACY_STORAGE_KEY = "gacha-demo-v1";
 export const PREVIOUS_STORAGE_KEY = "gacha-demo-sample-v3";
-export const STORAGE_KEY = "gacha-demo-sample-v4";
+export const PREVIOUS_V4_STORAGE_KEY = "gacha-demo-sample-v4";
+export const STORAGE_KEY = "gacha-demo-sample-v5";
 export const SHIPPING_UNLOCK_DAY = 60;
 
 export function isValidDemoDay(value: unknown): value is number {
@@ -71,9 +85,9 @@ export function getShippingStage(item: InventoryItem, demoDay: number) {
     : item.status;
 }
 
-/** Kept and shipping-preview packs are reserved; demo resales return to this pool. */
+/** Kept and shipping-preview reward units are reserved; resales return one unit. */
 export function remainingStock(state: DemoState, prizeId: string): number {
-  const prize = stockCatalog.find((entry) => entry.id === prizeId);
+  const prize = getStockCatalog(state).find((entry) => entry.id === prizeId);
   if (!prize) return 0;
   const reserved = state.items.filter(
     (item) => item.prize.id === prizeId && item.status !== "sold",
@@ -82,19 +96,19 @@ export function remainingStock(state: DemoState, prizeId: string): number {
 }
 
 export function machineStock(state: DemoState, machineId: MachineId): number {
-  return (machineById(machineId)?.prizes ?? []).reduce(
+  return (machineById(machineId, state)?.prizes ?? []).reduce(
     (total, prize) => total + remainingStock(state, prize.id),
     0,
   );
 }
 
-/** Map an integer ticket to a remaining pack, weighting each set by available stock. */
+/** Map one integer ticket to one remaining reward unit, regardless of pack count. */
 export function drawPrizeIndex(
   state: DemoState,
   machineId: MachineId,
   ticket: number,
 ): number {
-  const machine = machineById(machineId);
+  const machine = machineById(machineId, state);
   if (!machine || !Number.isInteger(ticket) || ticket < 0) return -1;
   let cursor = ticket;
   for (const [index, prize] of machine.prizes.entries()) {
@@ -121,16 +135,55 @@ export type DemoAction =
   | { type: "redeem"; itemId: string }
   | { type: "queue"; itemId: string }
   | { type: "ship"; itemId: string; demoDay: number }
+  | { type: "save-stock"; prize: StockPrize }
   | { type: "reset" };
 
-const machineById = (id: MachineId) =>
-  machines.find((machine) => machine.id === id);
+export function getStockCatalog(state: DemoState): StockPrize[] {
+  return state.stockCatalog ?? stockCatalog;
+}
+
+export function getMachines(state: DemoState): Machine[] {
+  return machines.map((machine) => ({
+    ...machine,
+    prizes: getStockCatalog(state).filter((prize) =>
+      prize.machineIds.includes(machine.id),
+    ),
+  }));
+}
+
+const machineById = (id: MachineId, state: DemoState) =>
+  getMachines(state).find((machine) => machine.id === id);
 
 export function demoReducer(state: DemoState, action: DemoAction): DemoState {
-  if (action.type === "reset") return initialState;
+  if (action.type === "reset") {
+    return state.stockCatalog
+      ? { ...initialState, stockCatalog: state.stockCatalog }
+      : initialState;
+  }
+
+  if (action.type === "save-stock") {
+    if (!isStockPrize(action.prize)) return state;
+    const reserved = state.items.filter(
+      (item) => item.prize.id === action.prize.id && item.status !== "sold",
+    ).length;
+    if (action.prize.startingQuantity < reserved) return state;
+    const current = getStockCatalog(state);
+    if (
+      current.length >= 5000 &&
+      !current.some((row) => row.id === action.prize.id)
+    )
+      return state;
+    const prize = copyStockPrize(action.prize);
+    return {
+      ...state,
+      stockCatalog: current.some((row) => row.id === prize.id)
+        ? current.map((row) => (row.id === prize.id ? prize : row))
+        : [...current, prize],
+    };
+  }
 
   if (action.type === "pull") {
-    const machine = machineById(action.machineId);
+    const machine = machineById(action.machineId, state);
     if (
       !machine ||
       !Number.isInteger(action.prizeIndex) ||
@@ -148,12 +201,13 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
     }
     const item: InventoryItem = {
       id: action.itemId,
-      prize: machine.prizes[action.prizeIndex],
+      prize: copyStockPrize(machine.prizes[action.prizeIndex]),
       machineId: machine.id,
       status: "held",
       createdAt: action.createdAt,
     };
     return {
+      ...state,
       balance: state.balance - machine.price,
       items: [...state.items, item],
       pulls: state.pulls + 1,
@@ -215,13 +269,6 @@ function isValidDate(value: unknown): value is string {
   );
 }
 
-function catalogPrize(
-  machineId: MachineId,
-  prizeId: unknown,
-): Prize | undefined {
-  return machineById(machineId)?.prizes.find((prize) => prize.id === prizeId);
-}
-
 /** Safely reads the direct JSON state saved under STORAGE_KEY from localStorage. */
 export function parseSavedState(raw: string | null): DemoState {
   if (raw === null) return initialState;
@@ -241,6 +288,24 @@ export function parseSavedState(raw: string | null): DemoState {
       return initialState;
     }
 
+    let catalog: StockPrize[] | undefined;
+    if (candidate.stockCatalog !== undefined) {
+      if (
+        !Array.isArray(candidate.stockCatalog) ||
+        candidate.stockCatalog.length > 5000 ||
+        !candidate.stockCatalog.every(isStockPrize)
+      )
+        return initialState;
+      catalog = candidate.stockCatalog.map(copyStockPrize);
+      const catalogIds = new Set(catalog.map((prize) => prize.id));
+      if (
+        catalogIds.size !== catalog.length ||
+        stockCatalog.some((prize) => !catalogIds.has(prize.id))
+      )
+        return initialState;
+    }
+
+    let migratedLegacy = false;
     const ids = new Set<string>();
     const items: InventoryItem[] = [];
     for (const rawItem of candidate.items) {
@@ -257,8 +322,50 @@ export function parseSavedState(raw: string | null): DemoState {
       )
         return initialState;
       const rawPrize = item.prize as Record<string, unknown>;
-      const prize = catalogPrize(item.machineId, rawPrize.id);
-      if (!prize || !samePrize(rawPrize, prize)) return initialState;
+      let prize: Prize;
+      if (catalog) {
+        if (
+          !isPrizeSnapshot(rawPrize) ||
+          ("language" in rawPrize && !isStockPrize(rawPrize)) ||
+          !catalog.some((row) => row.id === rawPrize.id)
+        )
+          return initialState;
+        prize = {
+          id: rawPrize.id,
+          name: rawPrize.name,
+          detail: rawPrize.detail,
+          kind: rawPrize.kind,
+          value: rawPrize.value,
+          ...(rawPrize.packCount === undefined
+            ? {}
+            : { packCount: rawPrize.packCount }),
+          ...(rawPrize.grade === undefined ? {} : { grade: rawPrize.grade }),
+        };
+        // Preserve full historical metadata when the award contains a valid catalog snapshot.
+        if (isStockPrize(rawPrize)) prize = copyStockPrize(rawPrize);
+      } else {
+        const current = stockCatalog.find(
+          (row) =>
+            row.id === rawPrize.id &&
+            row.machineIds.includes(item.machineId as MachineId),
+        );
+        const legacy = legacyStockCatalog.find(
+          (row) => row.id === rawPrize.id && row.machineId === item.machineId,
+        );
+        if (current && samePrize(rawPrize, current))
+          prize = copyStockPrize(current);
+        else if (legacy && samePrize(rawPrize, legacy)) {
+          prize = {
+            id: legacy.id,
+            name: legacy.name,
+            detail: legacy.detail,
+            kind: legacy.kind,
+            value: legacy.value,
+            packCount: 1,
+          };
+          migratedLegacy = true;
+        } else return initialState;
+      }
       ids.add(item.id);
       items.push({
         id: item.id,
@@ -269,13 +376,20 @@ export function parseSavedState(raw: string | null): DemoState {
       });
     }
     if (candidate.pulls !== items.length) return initialState;
-    for (const prize of stockCatalog) {
+    for (const prize of catalog ?? stockCatalog) {
       const reserved = items.filter(
         (item) => item.prize.id === prize.id && item.status !== "sold",
       ).length;
       if (reserved > prize.startingQuantity) return initialState;
     }
-    return { balance: candidate.balance, pulls: candidate.pulls, items };
+    return {
+      balance: candidate.balance,
+      pulls: candidate.pulls,
+      items,
+      ...(catalog || migratedLegacy
+        ? { stockCatalog: catalog ?? stockCatalog.map(copyStockPrize) }
+        : {}),
+    };
   } catch {
     return initialState;
   }
@@ -291,10 +405,6 @@ export function parsePreviousSavedState(raw: string | null): DemoState {
       item.status === "shipping" ? { ...item, status: "queued" } : item,
     ),
   };
-}
-
-function isMachineId(value: unknown): value is MachineId {
-  return value === "common" || value === "rare" || value === "epic";
 }
 
 function isStatus(value: unknown): value is InventoryItem["status"] {
@@ -316,6 +426,15 @@ function samePrize(saved: Record<string, unknown>, prize: Prize): boolean {
     saved.value === prize.value &&
     saved.grade === prize.grade &&
     saved.startingQuantity === prize.startingQuantity &&
-    saved.machineId === prize.machineId
+    saved.machineId === prize.machineId &&
+    saved.packCount === prize.packCount &&
+    (!("machineIds" in prize) ||
+      JSON.stringify(saved.machineIds) === JSON.stringify(prize.machineIds)) &&
+    (!("language" in prize) ||
+      (saved.language === prize.language &&
+        saved.setId === (prize as StockPrize).setId &&
+        saved.cardmarketUrl === (prize as StockPrize).cardmarketUrl &&
+        saved.marketPriceEur === (prize as StockPrize).marketPriceEur &&
+        saved.marketCheckedAt === (prize as StockPrize).marketCheckedAt))
   );
 }

@@ -27,11 +27,11 @@ import {
 import {
   demoReducer,
   drawPrizeIndex,
+  getMachines,
+  getStockCatalog,
   machineStock,
-  machines,
   remainingStock,
   resaleValue,
-  stockCatalog,
   type InventoryItem,
   type MachineId,
   type Prize,
@@ -71,13 +71,25 @@ function MachineSprite({
 }
 
 export function PrizeSymbol({ prize }: { prize: Prize }) {
+  const typeLabel = prizeTypeLabel(prize);
   return (
     <div className={`prize-symbol ${prize.kind}`} aria-hidden="true">
       {prize.kind === "graded" ? <ShieldCheck /> : <Package />}
-      <span>{prize.kind === "graded" ? "GRADED" : "SEALED"}</span>
+      <span>{typeLabel}</span>
       <small className="prize-set-badge">{prize.name}</small>
     </div>
   );
+}
+
+function prizeTypeLabel(prize: Prize) {
+  if (prize.kind === "pack")
+    return prize.packCount === 1 ? "1 PACK" : `${prize.packCount} PACKS`;
+  if (prize.kind === "box") return "BOX";
+  if (prize.kind === "collection")
+    return prize.name.toUpperCase().includes("D23") ? "D23" : "COLLECTION";
+  if (prize.kind === "graded")
+    return prize.grade?.replace(/\s+/g, "") ?? "GRADED";
+  return "MYSTERY";
 }
 
 function ClawSequence({ id }: { id: MachineId }) {
@@ -177,7 +189,12 @@ export default function Arcade() {
   const [showAllStock, setShowAllStock] = useState(false);
   const pullLock = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const machines = getMachines(activeState);
+  const stockCatalog = getStockCatalog(activeState);
   const machine = machines.find((item) => item.id === selected)!;
+  const displayedStock = showAllStock
+    ? stockCatalog
+    : stockCatalog.filter((prize) => prize.machineIds.includes(selected));
 
   useEffect(() => {
     return () => {
@@ -255,10 +272,13 @@ export default function Arcade() {
     pullLock.current = true;
     const itemId = crypto.randomUUID();
     const limit =
-      Math.floor(2 ** 32 / selectedMachineStock) * selectedMachineStock;
-    let random = crypto.getRandomValues(new Uint32Array(1))[0];
-    while (random >= limit)
-      random = crypto.getRandomValues(new Uint32Array(1))[0];
+      Math.floor(2 ** 53 / selectedMachineStock) * selectedMachineStock;
+    const ticket = new Uint32Array(2);
+    let random: number;
+    do {
+      crypto.getRandomValues(ticket);
+      random = (ticket[0] & 0x1fffff) * 2 ** 32 + ticket[1];
+    } while (random >= limit);
     const prizeIndex = drawPrizeIndex(
       activeState,
       selected,
@@ -336,24 +356,25 @@ export default function Arcade() {
           <div className="pool-meta">
             <strong>
               {showAllStock ? totalRemainingStock : selectedMachineStock}{" "}
-              <span>PACKS LEFT</span>
+              <span>PRIZES LEFT</span>
             </strong>
             <button
               className="text-button"
               onClick={() => setShowAllStock((current) => !current)}
             >
-              {showAllStock ? machine.name + " pool" : "All 14 sets"}{" "}
+              {showAllStock ? machine.name + " pool" : "All prizes"}{" "}
               <ChevronRight size={15} />
             </button>
           </div>
           <p className="pool-caption">
-            Fictional stock · One sealed pack per pull
+            Fictional stock · Each pull awards one prize
           </p>
           <div className="pool-stock-list">
-            {(showAllStock ? stockCatalog : machine.prizes).map((prize) => {
-              const tier = prize.machineId ?? selected;
+            {displayedStock.map((prize) => {
+              const eligibleInSelectedMachine =
+                prize.machineIds.includes(selected);
+              const tier = prize.machineIds[0] ?? selected;
               const left = remainingStock(activeState, prize.id);
-              const total = machineStock(activeState, tier);
               return (
                 <article
                   className="pool-stock-row"
@@ -363,12 +384,25 @@ export default function Arcade() {
                   <div>
                     <h3>{prize.name}</h3>
                     <span>
-                      {showAllStock ? tier.toUpperCase() + " · " : ""}
-                      {left} left{" "}
-                      {total > 0
-                        ? "· " + ((left / total) * 100).toFixed(1) + "% odds"
-                        : "· Empty pool"}
+                      {prize.detail} · {left} available ·{" "}
+                      {eligibleInSelectedMachine
+                        ? selectedMachineStock > 0
+                          ? `${((left / selectedMachineStock) * 100).toFixed(1)}% odds`
+                          : "Empty pool"
+                        : `Not in ${machine.name} pool`}
                     </span>
+                    {showAllStock && (
+                      <span>
+                        {prize.machineIds.map((machineId) => (
+                          <b
+                            className={`machine-mini-badge ${machineId}`}
+                            key={machineId}
+                          >
+                            {machineId}
+                          </b>
+                        ))}
+                      </span>
+                    )}
                   </div>
                   <strong>
                     {credits(prize.value)} <small>CR</small>
@@ -378,8 +412,9 @@ export default function Arcade() {
             })}
           </div>
           <p className="pool-caption">
-            100 sample packs per set at start. Equal chance per remaining pack;
-            odds rounded per machine. Resell returns a pack to its pool.
+            Counts are reward units: a bundle or box uses one draw ticket. Each
+            eligible remaining prize has an equal chance; odds are rounded for
+            the selected machine. Resell returns the prize to its pool.
           </p>
         </>
       )}
@@ -403,8 +438,9 @@ export default function Arcade() {
               <section>
                 <h3>Find your next collectible</h3>
                 <p>
-                  Spend play credits and reveal one sealed Lorcana booster pack.
-                  You start with 250 credits.
+                  Spend play credits and reveal a fictional prize. A pull can be
+                  a pack bundle, box, graded card, collection, or mystery. You
+                  start with 250 credits.
                 </p>
               </section>
             </div>
@@ -915,10 +951,10 @@ export default function Arcade() {
                     <h2>{machine.name} discoveries</h2>
                     <div className="machine-facts">
                       <span>
-                        <strong>{machine.prizes.length}</strong> Lorcana sets
+                        <strong>{machine.prizes.length}</strong> prizes
                       </span>
                       <span>
-                        <strong>{selectedMachineStock}</strong> sample packs
+                        <strong>{selectedMachineStock}</strong> sample prizes
                         left
                       </span>
                     </div>
@@ -989,7 +1025,8 @@ export default function Arcade() {
                     ) : (
                       <p className="pull-note">
                         <ShieldCheck size={13} />
-                        One pull awards one sealed Lorcana booster pack.
+                        One pull awards one prize: a pack bundle, box, graded
+                        card, collection, or mystery.
                       </p>
                     )}
                     <div className="outcome-options">
@@ -1017,7 +1054,7 @@ export default function Arcade() {
                       }}
                     >
                       <Package size={15} /> View sample stock ·{" "}
-                      {machine.prizes.length} sets
+                      {machine.prizes.length} prizes
                       <ChevronRight size={15} />
                     </button>
                   </>

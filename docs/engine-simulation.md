@@ -1,4 +1,4 @@
-# Engine Lab — v0.1.15
+# Engine Lab — v0.1.16
 
 Route: `/engine`. Access uses the existing admin session and login. This is an isolated browser simulation: it does not create real users, collect money, reserve warehouse stock or send shipments. Scenarios and results stay in memory until exported as JSON.
 
@@ -16,7 +16,14 @@ The default target house edge is 15%. Every draw uses checked odds for the curre
 
 This is an expected-value guard, not a promise that every run is profitable. It does not personalize odds by player. Each available unit is weighted within the protected distribution, and stock can still move toward an unfavorable realized outcome.
 
-The stock invariant is `starting units = available + kept + queued`; sold-back units return to available and never increase starting stock. The run stops on complete depletion, no drawable stock, edge protection failure, or completion of all scheduled visits. Planned pulls are capped at one million in total. The engine has a bounded overall workload and retains only summarized event history.
+The stock invariant is `starting units = available + kept + queued`; sold-back units return to available and never increase starting stock. A run can stop for four core reasons:
+
+- `pull-cap`: all scheduled visits completed.
+- `stock-empty`: no available reward units remain.
+- `no-drawable-stock`: remaining items are excluded because their draw weight is zero.
+- `edge-protected`: the remaining pool cannot support the configured target after price, fees, market and liability constraints. This can leave substantial stock because the guard protects the expected distribution rather than forcing an unfavorable draw.
+
+Planned pulls are capped at one million in total. The engine has a bounded overall workload and retains only summarized event history.
 
 ## Money and outcomes
 

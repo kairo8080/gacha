@@ -39,6 +39,15 @@ const machine=config.machineId[0].toUpperCase()+config.machineId.slice(1);
 const change=<K extends keyof EngineConfig>(k:K,v:EngineConfig[K])=>onConfigChange({...config,[k]:v});
 const item=<K extends keyof EngineItem>(id:string,k:K,v:EngineItem[K])=>onItemsChange(items.map(x=>x.id===id?{...x,[k]:v}:x));
 const status=mode==="instant"?"COMPUTING RESULTS…":state?.stopReason==="edge-protected"?"EDGE PROTECTED · RESTOCK OR CHANGE PRICE":state?.stopReason==="pull-cap"?"ALL VISITS COMPLETED":state?.stopReason?state.stopReason.replaceAll("-"," "):mode==="paused"?"PAUSED · NO ACTIVITY IS SIMULATED":mode==="idle"?"READY FOR A NEW SCENARIO":"LIVE SIMULATION";
+const runNote=state?.stopReason==="edge-protected"
+  ? `Stopped: remaining stock cannot support the ${pct(config.targetHouseEdge)} target at ${money(config.pullPriceCents)}/pull. Restock or adjust setup.`
+  :state?.stopReason==="pull-cap"
+    ? "Finished: all visitors completed their planned sessions. Stock can remain for a new run."
+    :state?.stopReason==="stock-empty"
+      ? "Stopped: every reward is now held or queued. No available stock remains."
+      :state?.stopReason==="no-drawable-stock"
+        ? "Stopped: stock remains, but its draw weights are zero. Adjust stock or weights in Setup / Stock."
+        :"Expected edge is a distribution estimate; it does not guarantee this run’s profit.";
 return <div className="engine-ui engine-shell">
 <header className="engine-header">
 <a className="engine-brand" href="/">
@@ -98,7 +107,9 @@ return <div className="engine-ui engine-shell">
 <span role="img" aria-label={`${machine} machine`} style={{backgroundImage:`url(/pixelart/${machine}.png)`}}/>
 </div>
 <div className="engine-award">
-<span>LATEST AWARD</span>{event&&<ProductImage prize={(rows.find(x=>x.id===event.itemId)??rows[0]) as ProductImagePrize} size={44}/>}<strong>{event?.itemName??"—"}</strong>
+<span>LATEST AWARD</span>
+<div className="engine-award-image">{event?<ProductImage prize={(rows.find(x=>x.id===event.itemId)??rows[0]) as ProductImagePrize} size={44}/>:<Package size={28} aria-hidden="true"/>}</div>
+<strong>{event?.itemName??"—"}</strong>
 <small>{event?`PULL ${num(event.pull)} · ${money(event.marketCents)} value`:"The next award appears here."}</small>
 </div>
 </div>
@@ -140,7 +151,7 @@ return <div className="engine-ui engine-shell">
 <b>{state?.expectedMarketCents==null?"—":money(state.expectedMarketCents)}</b>
 </div>
 </div>
-<p className="engine-edge-note">Expected edge is a distribution estimate; it does not guarantee this run’s profit.</p>
+<p className="engine-edge-note" role="status">{runNote}</p>
 <div className="engine-stock-gauges">
 <h3>STOCK MOVING</h3>
 <Gauge label="AVAILABLE" value={available} total={initial} tone="available"/>

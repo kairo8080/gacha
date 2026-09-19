@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.1.16 — 2026-09-19
+
+- Stabilized the live Engine Lab frame while dynamic text, images and activity details change by reserving layout space and keeping inline content within its bounds.
+- Added a clear inline stop explanation in the existing note area, including runs that stop while substantial stock remains.
+- Documentation records the four core stop reasons: pull-cap, stock-empty, no-drawable-stock and edge-protected.
+- Verified typecheck, all 72 tests and production build. Browser measurements confirmed unchanged frame positions through idle, live pulls, pause and completion at 1706x960 and 1280x720; long product names fit on desktop and phone. No simulation or economic logic changed.
+
 ## v0.1.15 — 2026-09-19
 
 - Updated Engine Lab with fresh crypto-random seeds for new runs by default and optional repeat seeds for reproducibility at every playback speed.

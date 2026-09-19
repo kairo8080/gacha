@@ -187,28 +187,69 @@
 @media(max-width:680px){.engine-stats,.engine-data{max-height:none;overflow:visible}.engine-data .engine-table-wrap{max-height:480px;overflow:auto}.engine-pagination{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.engine-machine-art.running span{animation:none}}
 .engine-machine-art span{height:100%;max-height:184px;width:auto;aspect-ratio:62/92;flex:none}
+/* Reserve the same slots for idle, drawing, paused and finished content. */
+.engine-buttons>button:first-child{width:114px;flex:0 0 114px}
+.engine-visitor{min-width:0;grid-template-rows:128px 22px 42px 22px;align-content:center}
+.engine-visitor>b,.engine-visitor>small{display:block;width:100%;min-width:0;line-height:1.2;overflow-wrap:anywhere;overflow:auto}
+.engine-award{min-width:0;height:228px;grid-template-rows:14px 44px 68px 30px;align-content:center;gap:7px}
+.engine-award-image{width:44px;height:44px;display:grid;place-items:center;color:#9db3ce}
+.engine-award>strong,.engine-award>small{min-width:0;overflow-wrap:anywhere;overflow:auto}
+.engine-award>small{line-height:1.25}
+.engine-lanes span{white-space:nowrap;font-variant-numeric:tabular-nums}
+.engine-feed-list{height:132px;grid-auto-rows:66px;overflow:auto}
+.engine-feed>.engine-empty{height:132px;padding:16px;align-content:center}
+.engine-feed-list em{white-space:nowrap}
+@media(min-width:1001px){
+  .engine-live-grid{height:396px}
+  .engine-machine-stage{min-height:0;display:grid;grid-template-rows:38px minmax(0,1fr) 74px}
+  .engine-machine-body{min-height:0;grid-template-columns:180px minmax(124px,1fr) 220px}
+  .engine-machine-stage>.engine-panel-title,.engine-live-side>.engine-panel-title{height:38px;min-height:0;flex:none}
+  .engine-edge-note{height:58px;flex:none;overflow:auto;font-size:14px;line-height:17px;padding:6px 10px}
+  .engine-live-side{min-height:0;max-height:none}
+}
+@media(min-width:681px) and (max-width:1000px){
+  .engine-machine-body{height:268px;min-height:0;grid-template-columns:180px minmax(124px,1fr) 220px}
+  .engine-edge-note{height:58px;overflow:auto}
+}
+@media(max-width:680px){
+  .engine-strip .engine-status{min-height:30px}
+  .engine-machine-body{grid-template-rows:180px 250px;align-items:center}
+  .engine-visitor{grid-template-rows:128px 34px 42px 34px;gap:3px}
+  .engine-visitor small{font-size:15px}
+  .engine-award{height:244px;grid-template-rows:14px 44px 88px 36px;padding:8px;gap:5px}
+  .engine-award strong{font-size:16px;line-height:20px}
+  .engine-lanes span{font-size:18px;white-space:normal;height:44px;overflow:auto}
+  .engine-edge-note{height:66px;overflow:auto}
+  .engine-feed-list,.engine-feed>.engine-empty{height:198px}
+}
 @media(min-width:1001px) and (max-height:780px){
   .engine-main{padding-bottom:6px}
   .engine-control-row{padding:4px 10px}
   .engine-speed{line-height:1.05}
   .engine-speed small{display:none}
-  .engine-machine-body{grid-template-columns:180px minmax(150px,1fr) 175px;min-height:180px}
+  .engine-live-grid{height:304px}
+  .engine-machine-stage{grid-template-rows:36px minmax(0,1fr) 58px}
+  .engine-machine-stage>.engine-panel-title,.engine-live-side>.engine-panel-title{height:36px}
+  .engine-machine-body{grid-template-columns:180px minmax(124px,1fr) 220px;min-height:0}
   .engine-avatar{width:96px!important;height:96px!important}
-  .engine-visitor{gap:3px}
+  .engine-visitor{grid-template-rows:96px 20px 36px 20px;gap:3px}
   .engine-visitor small{font-size:15px;line-height:1.15}
+  .engine-award{height:194px;grid-template-rows:14px 44px 60px 28px;padding:8px;gap:5px}
+  .engine-award strong{font-size:17px;line-height:20px}
   .engine-lanes>div{padding:4px 8px}
   .engine-lanes span{margin-top:2px;font-size:20px;line-height:1.1}
   .engine-live-side{max-height:none;min-height:0}
   .engine-economics>div{padding:5px 9px}
   .engine-economics span{line-height:1.1}
   .engine-economics b{font-size:24px;line-height:1.1}
-  .engine-edge-note{padding:5px 10px;line-height:1.15}
+  .engine-edge-note{height:48px;padding:4px 10px;font-size:13px;line-height:15px}
   .engine-stock-gauges{padding:5px 10px}
   .engine-stock-gauges h3{margin-bottom:3px;line-height:1.1}
   .engine-gauge{margin-top:4px;gap:2px 8px;line-height:1.1}
   .engine-gauge b{font-size:17px;line-height:1.1}
   .engine-gauge i{height:6px}
-  .engine-feed-list{max-height:78px;overflow:auto}
+  .engine-feed-list,.engine-feed>.engine-empty{height:78px;max-height:78px;overflow:auto}
+  .engine-feed-list{grid-auto-rows:50px}
   .engine-feed-list>div{padding:4px 7px;line-height:1.05;gap:2px 7px}
   .engine-feed .engine-empty{padding:10px;gap:5px}
 }

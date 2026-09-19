@@ -6,6 +6,7 @@ import { APP_VERSION } from "@/lib/version";
 import type { MachineId } from "@/lib/demo";
 import {
   advanceEngine,
+  advanceEngineTime,
   createDefaultEngineConfig,
   createDefaultEngineItems,
   createEngine,
@@ -23,29 +24,30 @@ function Simulation({ onLogout }: { onLogout: () => void }) {
   const [run, setRun] = useState<EngineState | null>(null);
   const [mode, setMode] = useState<Mode>("idle");
   const [speed, setSpeed] = useState(1);
+  const [replay, setReplay] = useState(false);
   const [error, setError] = useState("");
   const current = useRef<EngineState | null>(null);
+  const pendingSeconds = useRef(0);
 
   useEffect(() => {
     if (mode !== "running" && mode !== "instant") return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
     let previous = performance.now();
-    let pending = 0;
     const step = () => {
       if (cancelled || !current.current) return;
       const before = current.current;
       const now = performance.now();
-      // 1× means every configured user makes one pull per configured interval.
-      pending += ((now - previous) / 1000) * speed *
-        before.config.users / before.config.secondsPerPull;
+      // Advance the session clock, including arrivals, browsing and departures.
+      pendingSeconds.current += ((now - previous) / 1000) * speed;
       previous = now;
-      const count = mode === "instant" ? 500 : Math.min(10_000, Math.floor(pending));
-      if (count > 0) {
+      if (mode === "instant" || pendingSeconds.current > 0) {
         try {
-          const next = advanceEngine(before, count);
+          const next = mode === "instant"
+            ? advanceEngine(before, 500)
+            : advanceEngineTime(before, pendingSeconds.current, 500);
           current.current = next;
-          pending = Math.max(0, pending - count);
+          pendingSeconds.current = Math.max(0, pendingSeconds.current - (next.simulatedSeconds - before.simulatedSeconds));
           // Instant mode paints only the final result, while yielding for Cancel.
           if (mode !== "instant" || next.stopReason) setRun(next);
           if (next.stopReason) {
@@ -59,7 +61,8 @@ function Simulation({ onLogout }: { onLogout: () => void }) {
           return;
         }
       }
-      timer = setTimeout(step, mode === "instant" || pending >= 1 ? 0 : 16);
+      // Live playback paints batches at a readable cadence; full runs only paint results.
+      timer = setTimeout(step, mode === "instant" || pendingSeconds.current >= 1 ? 0 : 80);
     };
     timer = setTimeout(step, 0);
     return () => { cancelled = true; clearTimeout(timer); };
@@ -67,9 +70,18 @@ function Simulation({ onLogout }: { onLogout: () => void }) {
 
   function start(instant: boolean) {
     try {
-      const next = current.current && !current.current.stopReason
-        ? current.current
-        : createEngine(config, items);
+      let next: EngineState;
+      if (current.current && !current.current.stopReason) next = current.current;
+      else {
+        let seed = config.seed;
+        if (!replay) {
+          do { seed = crypto.getRandomValues(new Uint32Array(1))[0]; } while (seed === config.seed);
+        }
+        const scenario = { ...config, seed };
+        next = createEngine(scenario, items);
+        pendingSeconds.current = 0;
+        setConfig(scenario);
+      }
       current.current = next;
       setRun(next);
       setError("");
@@ -86,6 +98,7 @@ function Simulation({ onLogout }: { onLogout: () => void }) {
 
   function reset() {
     current.current = null;
+    pendingSeconds.current = 0;
     setRun(null);
     setMode("idle");
     setError("");
@@ -105,7 +118,7 @@ function Simulation({ onLogout }: { onLogout: () => void }) {
       version: APP_VERSION,
       simulation: true,
       currency: "USD",
-      assumptions: "Fictional USD scenario; no CR/EUR conversion. Shipping is queued only. Fees per pull; taxes and fulfillment costs excluded.",
+      assumptions: "Fictional USD scenario and synthetic visitor profiles; no CR/EUR conversion. Stock-level odds protect a positive expected house edge, not guaranteed realized profit. Shipping is queued only. Fees per pull; taxes and fulfillment costs excluded.",
       summary: summarizeEngine(snapshot),
       run: snapshot,
     }, null, 2)], { type: "application/json" });
@@ -118,7 +131,8 @@ function Simulation({ onLogout }: { onLogout: () => void }) {
   }
 
   return <EngineDashboard
-    config={config} items={items} run={run} mode={mode} speed={speed} error={error}
+      config={config} items={items} run={run} mode={mode} speed={speed} error={error}
+      replay={replay} onReplayChange={setReplay}
     onConfigChange={setConfig} onItemsChange={setItems} onMachineChange={machine}
     onStart={() => start(false)} onPause={pause} onReset={reset}
     onInstant={() => start(true)} onSpeedChange={setSpeed} onExport={exportRun}

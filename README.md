@@ -1,4 +1,4 @@
-# Gacha Arcade — v0.1.14
+# Gacha Arcade — v0.1.15
 
 A local, simulated Lorcana collectible arcade using the owner's original pixel art. Built with Next.js, TypeScript, and React; fonts and artwork are served locally.
 
@@ -11,19 +11,19 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. Admin login requires the server-only variables documented in `.env.example`; no wallet or payment credentials are used.
 
-## Current release: v0.1.14
+## Current release: v0.1.15
 
 The visible release label is sourced from the `version` field in `package.json`; the npm lockfile and UI must stay synchronized with it. Every completed update increments the patch version once, records a matching version commit, creates an annotated immutable Git tag, publishes a matching GitHub release, pushes the commit and tag to the configured repository's default branch, and verifies the deployed Vercel version. Previous tags and releases remain available for rollback by redeploying a tag or reverting as a new version; never force-push or rewrite tags. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
 
-Current iteration: **v0.1.14 — Engine Lab**. The next routine update will be **v0.1.15**; the next larger milestone will be **v0.2.0**.
+Current iteration: **v0.1.15 — Live Engine Lab**. The next routine patch is **v0.1.16**; the next larger milestone will be **v0.2.0**.
 
 The public `/dev` route is an annotated working arcade for review. It is explicitly simulated, marked `noindex`, and contains no admin data or credentials, private stock counts, or real payments. Its browser-local demo wallet and collection follow the main simulation. UI-region labels A01–A24 update across machine, pull, result, and collection states; the label toggle is available below the hero. The extra demo/subheader and introductory copy were removed; the demo note and reset control live in the top header. Scene sizing is responsive, and the character’s tallest idle pose is sized to two-thirds of the machine’s visible artwork height after accounting for transparent sprite margins; its natural idle bob is unchanged.
 
-## Engine Lab — ticket v0.1.0-26
+## Engine Lab — tickets v0.1.0-26 and v0.1.0-27
 
-`/engine` uses the existing admin login and runs an isolated, seeded USD scenario in browser memory. Configure Common/Rare/Epic, user count, pulls per user, pull price, fees, behavior percentages and every item’s starting units, cost, market value and draw weight. Common defaults to $10, 85% market sellback, and a 60% sell / 30% keep / 10% shipping-queue behavior split. USD fixture prices are fictional and independent of arcade credits and manually entered EUR values.
+`/engine` uses the existing admin login and runs an isolated USD scenario in browser memory. Each new run gets a fresh crypto-random seed by default; an optional repeat seed preserves reproducibility at every playback speed. Synthetic visitors mix browser/no-pull, casual, regular and enthusiast plans, with randomized arrivals and pull cadence; each visitor is capped at 200 pulls by default. The profiles are synthetic controls, not a claim of empirically realistic traffic. Configure Common/Rare/Epic, pull price, fees, behavior percentages and every item’s starting units, cost, market value and draw weight. Common defaults to $10, 85% market sellback, and a 60% sell / 30% keep / 10% shipping-queue behavior split. USD fixture prices are fictional and independent of arcade credits and manually entered EUR values.
 
-Playback supports 1×, 2×, 10×, 100×, 1000×, pause/resume and a one-click full run. Every speed uses the same seeded draw sequence. Runs stop when all stock is reserved, no positive-weight stock remains, or the configured user pull limit is reached (maximum one million pulls). Export JSON to retain a result. The dashboard tracks per-item stock, user outcomes, payouts, revenue, reserved cost, P/L, cashflow, and depletion; see `docs/engine-simulation.md` for definitions. Runs do not update the arcade session or warehouse.
+Playback supports 1×, 2×, 10×, 100×, 1000×, pause/resume, export and full-run results. The live view emphasizes the machine, visitor flow and stock with four primary KPIs; setup, stock, players and stats have separate inline tabs. A default 15% house-edge guard checks the current eligible pool before every draw and stock change, requiring positive expected market margin and liability margin after fees. Zero-stock and zero-weight rows are excluded. If the guard cannot preserve every configured eligible item with nonzero odds, the run stops edge-protected. This protects expected distributions; it does not ensure every run is profitable and never personalizes odds by player. Runs do not update the arcade session or warehouse.
 
 ## Simulation experience (tickets v0.1.0-11 and v0.1.0-21)
 
@@ -91,4 +91,4 @@ The intended GitHub repository is `https://github.com/kairo8080/gacha`. Push the
 
 Product photos live in public/products/. The admin uses actual available files and marks missing photos clearly. See [the naming guide](docs/product-images.md) and [image sources](docs/product-image-sources.md). Paused, retired and empty products cannot be drawn; an event-only assignment is saved for future event setup. All stock and edits remain simulated and local to the browser.
 
-The Odds Lab previews and applies machine-specific simulation probabilities from manually entered EK/VK, EUR pull prices, target edge and expenses. Blank prices remain unknown; tuned machines pause when the target cannot be met. Ghost stock supports colored machine assignments, per-item odds, and list/card views. See docs/inventory-seed.md for calculation and persistence rules.
+The Odds Lab previews and applies machine-specific simulation probabilities from manually entered EK/VK, EUR pull prices, target edge and expenses. Blank prices remain unknown; tuned machines pause when the target cannot be met. Ghost stock supports colored machine assignments, per-item odds, and list/card views. See docs/inventory-seed.md for calculation and persistence rules. Engine sellback returns the same reward unit; keep and shipping reserve it. All USD values are fictional and browser-memory-only.

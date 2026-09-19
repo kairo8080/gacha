@@ -1,40 +1,38 @@
-# Engine Lab — v0.1.14
+# Engine Lab — v0.1.15
 
-Route: `/engine`. Access uses the existing admin session and login. This is a browser simulation; it does not create real users, collect money, reserve warehouse stock or send shipments. Scenarios and results remain in memory until exported as JSON.
+Route: `/engine`. Access uses the existing admin session and login. This is an isolated browser simulation: it does not create real users, collect money, reserve warehouse stock or send shipments. Scenarios and results stay in memory until exported as JSON.
 
-## Scenario
+## Runs and visitors
 
-- Select Common, Rare or Epic. The item identities and membership come from the public sample catalog, with 100 fictional reward units per item by default. Exact private stock is never read.
-- Common starts at $10 per pull; Rare at $25 and Epic at $60. All values on this page are USD simulation inputs. Existing CR or EUR values are not converted or imported.
-- Default behavior: 60% immediate sellback, 30% keep, 10% queue. These probabilities must add to 100%. Each simulated decision is independent of item value or past outcomes.
-- Sellback pays 85% of the awarded item's configured market value, rounded to cents, and returns the same reward unit immediately. Keep and queue each reserve one unit permanently for this run. A bundle is one reward unit.
-- Every user draws round-robin up to the configured pulls-per-user cap, with funding assumed for each purchase. Users do not change their behavior, recycle payouts into a finite budget, or sell previously held items later.
-- At 1× the aggregate rate is users / seconds-per-pull. The displayed simulated time counts the rounds needed for those users to make their pulls. Other speeds only change playback; the seeded outcome sequence remains the same.
+Each new run uses a fresh crypto-random seed unless repeatable replay is enabled. Repeat seeds make the run reproducible at 1×, 2×, 10×, 100× and 1000×, including full-run playback. The seed controls draw, arrival and cadence randomness.
 
-## Draws and stock
+Visitors are synthetic controls: 20% browser/no-pull, 40% casual (1–5 planned pulls), 30% regular (6–30), and 10% enthusiast (31–200). Arrivals are randomized within the 300-second default window, and each visitor’s pull cadence is randomized around the configured seconds-per-pull value. The default per-visitor maximum is 200 pulls. These proportions and timings are useful for exercising the live UI; they are not a claim of empirically realistic traffic.
 
-Each available unit has its item's configured weight. An item's current chance is `available units × weight / sum of all available weighted units`. This is a scenario model, separate from the arcade Odds Lab's house-edge solver. It does not guarantee profit. Low-value items can deplete earlier and leave a loss-making pool.
+Users are funded for each purchase and do not recycle payouts into a finite budget. Each draw sells back, keeps or queues independently using the configured behavior split. Sellback pays 85% of the configured market value, rounded to cents, and returns the same reward unit immediately. Keep and shipping reserve one unit for the run. A bundle or box is one reward unit.
 
-The stock invariant is `starting units = available + kept + queued`. Sold-back units are available again and never increase starting stock. Zero-stock and zero-weight items cannot win. Zero-weight units can remain in stock when a run stops because no drawable item remains.
+## Draws, stock and edge protection
 
-The run stops on complete depletion, no drawable stock, or the total user pull cap. The maximum is 10,000 users and one million planned pulls. A 100% sellback scenario cannot deplete through retention and stops at its pull cap. First-item depletion and complete-pool depletion are separate counters.
+The default target house edge is 15%. Every draw uses checked odds for the current pool; stock changes trigger a recalculation. Zero-stock and zero-weight rows are excluded. The protected distribution must give every remaining configured eligible item a representable nonzero chance while satisfying both a positive expected market margin and a positive expected liability margin after fees. If that is impossible, the run stops with `edge-protected` rather than drawing from an unprotected distribution.
+
+This is an expected-value guard, not a promise that every run is profitable. It does not personalize odds by player. Each available unit is weighted within the protected distribution, and stock can still move toward an unfavorable realized outcome.
+
+The stock invariant is `starting units = available + kept + queued`; sold-back units return to available and never increase starting stock. The run stops on complete depletion, no drawable stock, edge protection failure, or completion of all scheduled visits. Planned pulls are capped at one million in total. The engine has a bounded overall workload and retains only summarized event history.
 
 ## Money and outcomes
 
-- Revenue: completed pulls × pull price.
-- Payouts: cash paid on immediate sellbacks. This is not user profit.
-- Reserved COGS: original configured buy cost of kept and queued units. A recycled unit is not expensed again on each sellback.
-- House net P/L: revenue − sellback payouts − reserved COGS − per-pull fees.
-- Operating cashflow: revenue − payouts − fees. Cash after upfront stock purchase also subtracts the entire initial stock cost. Unreserved stock retains its modeled cost value.
-- Retained market: configured market value of kept and queued rewards.
-- User net value: payouts + retained market − spend. A winner has positive net value; this includes estimated item value, not just realized cash profit.
-- Value RTP: (payouts + retained market) / revenue. House ROI divides house P/L by initial stock cost.
-- Maximum cash drawdown measures the largest fall from a previous operating-cashflow peak.
+- Revenue is completed pulls × pull price.
+- Payouts are cash paid on immediate sellbacks; this is not user profit.
+- Reserved COGS is the configured cost of kept and queued units.
+- House net P/L is revenue − sellback payouts − reserved COGS − per-pull fees.
+- Operating cashflow is revenue − payouts − fees; initial stock cost is tracked separately.
+- Retained market is the configured market value of kept and queued rewards.
+- User net value is payouts + retained market − spend.
+- Value RTP is (payouts + retained market) / revenue.
 
-Taxes, fulfillment costs, storage, market-price changes, payout liquidity limits, shipping charges and later resale are excluded. Shipping requests remain queued throughout the run, consistent with the pre-launch 60-day shipping restriction. No dispatch clock runs here.
+All USD prices and outcomes are fictional. They are browser-memory values independent of arcade credits, EUR planning values and private inventory. No fulfillment, storage, tax, market-price change, shipping charge or later resale is modeled.
 
-## Repeatability and limits
+## Live view and results
 
-The seeded PRNG uses 53-bit draw tickets. Unrepresentably extreme weight ranges are rejected. Currency and stock arithmetic use bounded integer cents and units. Chunking preserves the input state and produces the same outcomes at every speed. The UI yields between full-run chunks so a run can be paused.
+The live view shows the machine, visitor flow and stock at current playback speed, with four primary KPIs. Setup, Stock, Players and Stats use separate inline tabs so the live view stays readable. Playback supports 1× through 1000×, pause/resume, export and full-run results. Full-run mode produces the same result as completing playback with the same seed.
 
-Results retain per-user and per-item totals, the last 100 draw events, and at most 200 P/L samples. The JSON export includes the scenario, seed, aggregate summary and retained run state. It is a bounded report, not a full event ledger. Reset keeps the scenario inputs and clears its run; changing the machine loads that machine's fictional default pool.
+Exports contain the scenario, seed, aggregate summary, per-user and per-item totals, bounded recent draw events and a bounded P/L history. They are reports, not a full event ledger. Reset keeps scenario inputs and clears the run; changing the machine loads that machine’s fictional default pool.

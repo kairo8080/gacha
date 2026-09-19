@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.15 — 2026-09-19
+
+- Updated Engine Lab with fresh crypto-random seeds for new runs by default and optional repeat seeds for reproducibility at every playback speed.
+- Added synthetic browser/no-pull, casual, regular and enthusiast visitors with randomized arrivals and cadence, plus a default 200-pull per-visitor cap. These profiles are simulation controls, not empirically realistic traffic claims.
+- Added a live machine/player/stock view with four primary KPIs, 1×–1000× playback, pause/resume, export and full-run results.
+- Added a default 15% house-edge guard that rechecks the current pool before draws and stock changes, constrains expected market and liability margins after fees, excludes zero-stock/zero-weight rows, and stops edge-protected when it cannot preserve every eligible item with nonzero odds. It does not promise profit on every run or personalize odds by player.
+- Sellback returns the same reward unit; keep and shipping reserve it. USD values remain fictional and browser-memory-only.
+- Verified typecheck, all 72 tests, production build, fresh versus replay runs, live player/stock movement, protected stopping, exported reports and compact desktop layout.
+
 ## v0.1.14 — 2026-09-19
 
 - Added `/engine`, an admin-access simulation of configurable users drawing from Common, Rare or Epic with fictional USD prices.

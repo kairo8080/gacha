@@ -272,6 +272,7 @@ export default function AdminDashboard() {
           ))}
         </nav>
         <div className="admin-header-actions">
+          <a href="/engine">ENGINE LAB</a>
           <span className="admin-session-label">
             <span className="admin-dot" />{" "}
             {ready ? "DEMO · THIS BROWSER" : "LOADING…"}

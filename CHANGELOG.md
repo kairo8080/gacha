@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.14 — 2026-09-19
+
+- Added `/engine`, an admin-access simulation of configurable users drawing from Common, Rare or Epic with fictional USD prices.
+- Added adjustable 85% market sellback, user behavior, per-item cost/value/stock/weight, deterministic seeds, playback speeds, pause/resume, full run and JSON export.
+- Added live financial/user KPIs, available versus reserved stock, per-item and per-user results, depletion counters, a P/L trace and activity history.
+- Simulations remain isolated from arcade inventory and real operations, with bounded runs and explicit stop reasons.
+- Verified typecheck, all 68 tests, production build, admin login/logout, stock depletion, sellback-only caps, repeatable playback, inline validation, export and compact desktop layouts.
+
 ## v0.1.13 — 2026-09-18
 
 - Added shared product photos to the player prize pool, inline pull reveal, collection/history cards and best-pull summary, including the `/dev` review route.

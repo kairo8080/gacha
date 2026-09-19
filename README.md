@@ -1,4 +1,4 @@
-# Gacha Arcade — v0.1.13
+# Gacha Arcade — v0.1.14
 
 A local, simulated Lorcana collectible arcade using the owner's original pixel art. Built with Next.js, TypeScript, and React; fonts and artwork are served locally.
 
@@ -11,13 +11,19 @@ npm run dev
 
 Open http://127.0.0.1:3000. The server listens on loopback only. Admin login requires the server-only variables documented in `.env.example`; no wallet or payment credentials are used.
 
-## Current release: v0.1.13
+## Current release: v0.1.14
 
 The visible release label is sourced from the `version` field in `package.json`; the npm lockfile and UI must stay synchronized with it. Every completed update increments the patch version once, records a matching version commit, creates an annotated immutable Git tag, publishes a matching GitHub release, pushes the commit and tag to the configured repository's default branch, and verifies the deployed Vercel version. Previous tags and releases remain available for rollback by redeploying a tag or reverting as a new version; never force-push or rewrite tags. Use a minor version only for a larger milestone explicitly requested by the owner. The numbered implementation history remains in `docs/v0.1.0-beta.md`.
 
-Current iteration: **v0.1.13 — Product photos throughout the arcade**. The next routine update will be **v0.1.14**; the next larger milestone will be **v0.2.0**.
+Current iteration: **v0.1.14 — Engine Lab**. The next routine update will be **v0.1.15**; the next larger milestone will be **v0.2.0**.
 
 The public `/dev` route is an annotated working arcade for review. It is explicitly simulated, marked `noindex`, and contains no admin data or credentials, private stock counts, or real payments. Its browser-local demo wallet and collection follow the main simulation. UI-region labels A01–A24 update across machine, pull, result, and collection states; the label toggle is available below the hero. The extra demo/subheader and introductory copy were removed; the demo note and reset control live in the top header. Scene sizing is responsive, and the character’s tallest idle pose is sized to two-thirds of the machine’s visible artwork height after accounting for transparent sprite margins; its natural idle bob is unchanged.
+
+## Engine Lab — ticket v0.1.0-26
+
+`/engine` uses the existing admin login and runs an isolated, seeded USD scenario in browser memory. Configure Common/Rare/Epic, user count, pulls per user, pull price, fees, behavior percentages and every item’s starting units, cost, market value and draw weight. Common defaults to $10, 85% market sellback, and a 60% sell / 30% keep / 10% shipping-queue behavior split. USD fixture prices are fictional and independent of arcade credits and manually entered EUR values.
+
+Playback supports 1×, 2×, 10×, 100×, 1000×, pause/resume and a one-click full run. Every speed uses the same seeded draw sequence. Runs stop when all stock is reserved, no positive-weight stock remains, or the configured user pull limit is reached (maximum one million pulls). Export JSON to retain a result. The dashboard tracks per-item stock, user outcomes, payouts, revenue, reserved cost, P/L, cashflow, and depletion; see `docs/engine-simulation.md` for definitions. Runs do not update the arcade session or warehouse.
 
 ## Simulation experience (tickets v0.1.0-11 and v0.1.0-21)
 
